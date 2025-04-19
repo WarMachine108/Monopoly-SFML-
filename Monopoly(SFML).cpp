@@ -180,9 +180,9 @@ public:
     ~Asset() {}
 };
 
-class Eve: public Tile {
+class Eve : public Tile {
 };
-class CommunityChest :public Eve{
+class CommunityChest :public Eve {
 private:
     string name;
     int price;
@@ -194,7 +194,7 @@ public:
     ~CommunityChest() {}
 };
 
-class Chance :public Eve{
+class Chance :public Eve {
 private:
     string name;
     int price;
@@ -217,7 +217,7 @@ public:
     ~JailEvent() {}
 };
 
-class TaxEvent : public Eve{
+class TaxEvent : public Eve {
 private:
     string name;
     int tax;
