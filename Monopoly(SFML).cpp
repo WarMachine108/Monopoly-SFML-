@@ -8,7 +8,7 @@
 #include<SFML/Graphics.hpp>
 #include<SFML/Window.hpp>
 
-using namespace sf;
+
 using namespace std;
 
 class Player;
@@ -372,7 +372,7 @@ void chance3::apply_rule() {
     player->change_balance(-20);
 }
 string chance3::getTitle() {
-    return " “Drunk in charge” fine $20 ";
+    return " ï¿½Drunk in chargeï¿½ fine $20 ";
 }
 void chance4::apply_rule() {
     Player* player = GameController::currentPlayer;
