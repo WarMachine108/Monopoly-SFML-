@@ -602,15 +602,14 @@ void GameController::showBoard() {
     cout << "board has been initialised" << endl;
 }
 
-RectangleShape createTileBox(float x, float y, float width, float height, Color color = Color::Transparent) {
-    RectangleShape box(Vector2f(width, height));
+RectangleShape createTileBox(float x, float y, float w, float h, Color color = Color::Transparent) {
+    RectangleShape box({w, h});
     box.setPosition({ x, y });
-    box.setFillColor(Color::Transparent);
-    box.setOutlineColor(color);
+    box.setFillColor(color);
+    box.setOutlineColor(Color::Red);
     box.setOutlineThickness(2.f);
     return box;
-};
-
+}
 int main()
 {
     int windowSize = 1600;
@@ -620,7 +619,7 @@ int main()
     GameController::showBoard();
     GameController::next_turn(0);
 
-    ContextSettings settings; 
+    ContextSettings settings;
     settings.antiAliasingLevel = 8;
 
     Texture boardtexture("Assets/Board.jpg");
@@ -645,7 +644,7 @@ int main()
     p3.setSmooth(true);
     p4.setSmooth(true);
 
-    Sprite boardsprite(boardtexture); 
+    Sprite boardsprite(boardtexture);
     vector<RectangleShape> boxes;
     for (int i = 0; i < tileCountPerSide; ++i) {
         float x = windowSize - (i + 1) * tileSize;
@@ -677,7 +676,7 @@ int main()
     sp3.scale({ 0.1f, 0.1f });
     sp4.scale({ 0.1f, 0.1f });
 
-    RenderWindow window(VideoMode({ 1600, 1600}), "Monopoly");
+    RenderWindow window(VideoMode({ 1600, 1600 }), "Monopoly");
     window.setFramerateLimit(165);
 
     while (window.isOpen())
@@ -695,4 +694,3 @@ int main()
     }
     return 0;
 }
-
