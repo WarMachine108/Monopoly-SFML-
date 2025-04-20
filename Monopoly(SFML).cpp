@@ -1,4 +1,4 @@
-#include<iostream>
+﻿#include<iostream>
 #include<string.h>
 #include<vector>
 #include<cstdlib>
@@ -272,13 +272,6 @@ public:
     ~Commodity() {}
 };
 
-int main()
-{
-    GameController::showBoard();
-    GameController::next_turn(0);
-
-}
-
 vector<Rule*> createRules() {
     vector<Rule*> rules;
 }
@@ -523,7 +516,7 @@ vector<Rule*> GameController::rules = {
 vector<Player*> GameController::players = {
     new Player("red"),
     new Player("green"),
-    new Player("blue"),
+    new Player("cyan"),
     new Player("yellow")
 };
 
@@ -608,3 +601,98 @@ void GameController::end_game() {
 void GameController::showBoard() {
     cout << "board has been initialised" << endl;
 }
+
+RectangleShape createTileBox(float x, float y, float width, float height, Color color = Color::Transparent) {
+    RectangleShape box(Vector2f(width, height));
+    box.setPosition({ x, y });
+    box.setFillColor(Color::Transparent);
+    box.setOutlineColor(color);
+    box.setOutlineThickness(2.f);
+    return box;
+};
+
+int main()
+{
+    int windowSize = 1600;
+    int tileCountPerSide = 11;
+    float tileSize = windowSize / 11;
+
+    GameController::showBoard();
+    GameController::next_turn(0);
+
+    ContextSettings settings; 
+    settings.antiAliasingLevel = 8;
+
+    Texture boardtexture("Assets/Board.jpg");
+    Texture dice1("Assets/dice_1.png");
+    Texture dice2("Assets/dice_2.png");
+    Texture dice3("Assets/dice_3.png");
+    Texture dice4("Assets/dice_4.png");
+    Texture dice5("Assets/dice_5.png");
+    Texture dice6("Assets/dice_6.png");
+    Texture p1("Assets/p1.png");
+    Texture p2("Assets/p2.png");
+    Texture p3("Assets/p3.png");
+    Texture p4("Assets/p4.png");
+    dice1.setSmooth(true);
+    dice2.setSmooth(true);
+    dice3.setSmooth(true);
+    dice4.setSmooth(true);
+    dice5.setSmooth(true);
+    dice6.setSmooth(true);
+    p1.setSmooth(true);
+    p2.setSmooth(true);
+    p3.setSmooth(true);
+    p4.setSmooth(true);
+
+    Sprite boardsprite(boardtexture); 
+    vector<RectangleShape> boxes;
+    for (int i = 0; i < tileCountPerSide; ++i) {
+        float x = windowSize - (i + 1) * tileSize;
+        boxes.push_back(createTileBox(x, windowSize - tileSize, tileSize, tileSize));
+    }
+    for (int i = 1; i < tileCountPerSide - 1; ++i) {
+        boxes.push_back(createTileBox(0, windowSize - (i + 1) * tileSize, tileSize, tileSize));
+    }
+    for (int i = 0; i < tileCountPerSide; ++i) {
+        float x = i * tileSize;
+        boxes.push_back(createTileBox(x, 0, tileSize, tileSize));
+    }
+    for (int i = 1; i < tileCountPerSide - 1; ++i) {
+        boxes.push_back(createTileBox(windowSize - tileSize, i * tileSize, tileSize, tileSize));
+    }
+
+    Sprite sdice1(dice1);
+    Sprite sdice2(dice2);
+    Sprite sdice3(dice3);
+    Sprite sdice4(dice4);
+    Sprite sdice5(dice5);
+    Sprite sdice6(dice6);
+    Sprite sp1(p1);
+    Sprite sp2(p2);
+    Sprite sp3(p3);
+    Sprite sp4(p4);
+    sp1.scale({ 0.1f, 0.1f });
+    sp2.scale({ 0.1f, 0.1f });
+    sp3.scale({ 0.1f, 0.1f });
+    sp4.scale({ 0.1f, 0.1f });
+
+    RenderWindow window(VideoMode({ 1600, 1600}), "Monopoly");
+    window.setFramerateLimit(165);
+
+    while (window.isOpen())
+    {
+        while (const optional event = window.pollEvent())
+        {
+            if (event->is<Event::Closed>())
+                window.close();
+        }
+        window.clear(Color::Black);
+        window.draw(boardsprite);
+        for (const auto& box : boxes)
+            window.draw(box);
+        window.display();
+    }
+    return 0;
+}
+
