@@ -274,9 +274,6 @@ public:
     ~Commodity() {}
 };
 
-vector<Rule*> createRules() {
-    vector<Rule*> rules;
-}
 string Skip::getTitle() {
     return "skip";
 }
@@ -389,7 +386,7 @@ string JailRule::getTitle() {
     return "";
 }
 bool JailRule::check_jail() {
-
+    return true;
 }
 int JailRule::turns = 0;
 void Player::change_balance(int sum) {
