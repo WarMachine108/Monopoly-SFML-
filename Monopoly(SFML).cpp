@@ -556,7 +556,7 @@ vector<Player*> GameController::players = {
     new Player("Blue"),
     new Player("Green"),
     new Player("Yellow"),
-    new Player("Red"), 
+    new Player("Red"),
     new Player("Grey")
 };
 
@@ -616,7 +616,7 @@ vector<string> GameController::get_rule_txt() {
 int GameController::show_diceroll(int r1, int r2) {
     //now we'll wait till the button is clicked, when dice roll is clicked we'll execute this->
     cout << r1 + r2 << "\n";
-    return r1 + r2; 
+    return r1 + r2;
 }
 
 void GameController::next_turn(int xroll1, int xroll2) {
@@ -625,7 +625,7 @@ void GameController::next_turn(int xroll1, int xroll2) {
         playerIndx += 1;
         currentPlayer = players.at(playerIndx);
     }
-    int playerBoardIdx = show_diceroll(xroll1,xroll2);
+    int playerBoardIdx = show_diceroll(xroll1, xroll2);
     int newIndex = (currentPlayer->get_index() + playerBoardIdx) % GameController::board.size();
     currentPlayer->edit_index(newIndex);
     vector<string> strArr = get_rule_txt();
@@ -673,7 +673,7 @@ int GameController::showBoard() {
     settings.antiAliasingLevel = 8;
 
     // Load textures
-    Texture boardTexture, diceTextures[6], playerTextures[4], playerUiTex[4], uirect;
+    Texture boardTexture, diceTextures[6], playerTextures[4], playerUiTex[4], uirect, playerRect[4];
     if (!uirect.loadFromFile("Assets/uirect.png")) {
         cerr << "Failed to load board texture!" << endl;
         return -1;
@@ -704,6 +704,13 @@ int GameController::showBoard() {
             return -1;
         }
         playerUiTex[i].setSmooth(true);
+    }
+    for (int i = 0; i < 4; i++) {
+        if (!playerRect[i].loadFromFile("Assets/rect_" + to_string(i + 1) + ".jpg")) {
+            cerr << "Failed to load player texture " << i + 1 << endl;
+            return -1;
+        }
+        playerRect[i].setSmooth(true);
     }
     vector<RectangleShape> boxes;
     boxes.push_back(createTileBox(1390, 1395, 208, 208));
@@ -753,7 +760,7 @@ int GameController::showBoard() {
     sf::RectangleShape button(sf::Vector2f(150, 50));
     button.setPosition({ 2150, 750 });
     button.setFillColor(sf::Color::Transparent);
-    
+
     Font uiFont;
     if (!uiFont.openFromFile("Assets/agencyfb.ttf")) {
         cout << "Failed to load UI font!" << endl;
@@ -761,12 +768,16 @@ int GameController::showBoard() {
     }
 
     Text buttonText(uiFont);
-   
+
     Text red(uiFont);
     Text blue(uiFont);
     Text green(uiFont);
     Text yellow(uiFont);
     Text white(uiFont);
+    Text red_bal(uiFont);
+    Text blue_bal(uiFont);
+    Text green_bal(uiFont);
+    Text yellow_bal(uiFont);
 
     red.setString("PLAYER RED");
     blue.setString("PLAYER BLUE");
@@ -779,24 +790,40 @@ int GameController::showBoard() {
     green.setCharacterSize(30);
     yellow.setCharacterSize(30);
     white.setCharacterSize(40);
+    red_bal.setCharacterSize(30);
+    blue_bal.setCharacterSize(30);
+    green_bal.setCharacterSize(30);
+    yellow_bal.setCharacterSize(30);
 
     red.setFillColor(Color::Color(255, 150, 155, 255));
     blue.setFillColor(Color::Color(170, 211, 210, 255));
     green.setFillColor(Color::Color(186, 222, 160, 255));
     yellow.setFillColor(Color::Color(249, 205, 136, 255));
     white.setFillColor(Color::White);
+    red_bal.setFillColor(Color::White);
+    blue_bal.setFillColor(Color::White);
+    green_bal.setFillColor(Color::White);
+    yellow_bal.setFillColor(Color::White);
 
     red.setStyle(Text::Bold);
     blue.setStyle(Text::Bold);
     green.setStyle(Text::Bold);
     yellow.setStyle(Text::Bold);
     white.setStyle(Text::Bold);
+    red_bal.setStyle(Text::Bold);
+    blue_bal.setStyle(Text::Bold);
+    green_bal.setStyle(Text::Bold);
+    yellow_bal.setStyle(Text::Bold);
 
     blue.setPosition({ 1740, 370 });
     green.setPosition({ 1740, 470 });
     yellow.setPosition({ 1740, 570 });
     red.setPosition({ 1740, 670 });
     white.setPosition({ 2150,150 });
+    blue_bal.setPosition({ 2420, 370 });
+    green_bal.setPosition({ 2420, 470 });
+    yellow_bal.setPosition({ 2420, 570 });
+    red_bal.setPosition({ 2420, 670 });
     buttonText.setPosition({ 2050, 700 });
 
     // Initialize sprites
@@ -805,10 +832,9 @@ int GameController::showBoard() {
     Sprite playerSprites[4] = { Sprite(playerTextures[0]), Sprite(playerTextures[1]) , Sprite(playerTextures[2]) , Sprite(playerTextures[3]) };
     Sprite pfpSprites[4] = { Sprite(playerUiTex[0]), Sprite(playerUiTex[1]) , Sprite(playerUiTex[2]) , Sprite(playerUiTex[3]) };
     Sprite uibox(uirect);
+    Sprite playerRects[4] = { Sprite(playerRect[0]), Sprite(playerRect[1]) , Sprite(playerRect[2]) , Sprite(playerRect[3]) };
 
 
-    diceSprites[0].setTexture(diceTextures[0]);
-    diceSprites[1].setTexture(diceTextures[0]);
     diceSprites[0].setPosition({ 1620, 50 });
     diceSprites[1].setPosition({ 1850, 50 });
     diceSprites[0].scale({ 0.5f, 0.5f });
@@ -816,6 +842,18 @@ int GameController::showBoard() {
 
     uibox.setPosition({ 1625, 325 });
     uibox.scale({ 1.14f, 0.95f });
+
+    playerRects[0].setPosition({ 1630, 350 });
+    playerRects[0].scale({ 0.2f, 0.2f });
+
+    playerRects[1].setPosition({ 1630, 450 });
+    playerRects[1].scale({ 0.2f, 0.2f });
+
+    playerRects[2].setPosition({ 1630, 550 });
+    playerRects[2].scale({ 0.2f, 0.2f });
+
+    playerRects[3].setPosition({ 1650, 650 });
+    playerRects[3].scale({ 0.2f, 0.2f });
 
     playerSprites[0].scale({ 0.18f, 0.18f });
     playerSprites[0].setPosition({ 1475,1550 });
@@ -895,9 +933,13 @@ int GameController::showBoard() {
             if (elapsed >= seconds(1.5f)) {
                 isRolling = false;
                 GameController::next_turn(roll1, roll2);
-                GameController::playerIndx = (GameController::playerIndx + 1) % ((GameController::players.size()-1));
+                GameController::playerIndx = (GameController::playerIndx + 1) % ((GameController::players.size() - 1));
             }
-            //update the bal
+            //BGYR
+            red_bal.setString("$" + to_string(players[3]->getBalance()));
+            blue_bal.setString("$" + to_string(players[0]->getBalance()));
+            green_bal.setString("$" + to_string(players[1]->getBalance()));
+            yellow_bal.setString("$" + to_string(players[2]->getBalance()));
         }
 
         // Animation update
@@ -911,11 +953,11 @@ int GameController::showBoard() {
             diceSprites[1].setTexture(diceTextures[roll2 - 1]);
         }
         if (sf::Mouse::isButtonPressed(Mouse::Button::Left)) {
-                sf::Vector2i mousePos = sf::Mouse::getPosition(window);
-                if (button.getGlobalBounds().contains(static_cast<sf::Vector2f>(mousePos))) {
-                    std::cout << "Button clicked!" << std::endl;
-                }
+            sf::Vector2i mousePos = sf::Mouse::getPosition(window);
+            if (button.getGlobalBounds().contains(static_cast<sf::Vector2f>(mousePos))) {
+                std::cout << "Button clicked!" << std::endl;
             }
+        }
 
         window.clear(Color::Color(23, 14, 28, 255));
 
@@ -944,6 +986,14 @@ int GameController::showBoard() {
         window.draw(green);
         window.draw(yellow);
         window.draw(white);
+        window.draw(red_bal);
+        window.draw(blue_bal);
+        window.draw(green_bal);
+        window.draw(yellow_bal);
+        //Draw this shit gng !!!
+        /*if (currentPlayer) {
+            window.draw(playerRects[currentPlayer->get_index()]);
+        }*/
         window.draw(button);
         window.draw(buttonText);
         window.display();
