@@ -27,7 +27,7 @@ public:
     static vector <Tile*> board;
     static vector<string> get_rule_txt();
     static int show_diceroll(int r1, int r2);
-    static void next_turn(int xroll1, int xroll2, int playerIdx);
+    static void next_turn(int xroll1, int xroll2);
     static void Apply_rule(int ruleIndex);
     static void show_rules(vector<string> ruleTxts);
     static void end_game();
@@ -556,7 +556,8 @@ vector<Player*> GameController::players = {
     new Player("Blue"),
     new Player("Green"),
     new Player("Yellow"),
-    new Player("Red")
+    new Player("Red"), 
+    new Player("Grey")
 };
 
 vector <Tile*> GameController::board = {
@@ -618,12 +619,11 @@ int GameController::show_diceroll(int r1, int r2) {
     return r1 + r2; 
 }
 
-void GameController::next_turn(int xroll1, int xroll2, int playerIdx) {
-    currentPlayer = players.at(playerIdx);
+void GameController::next_turn(int xroll1, int xroll2) {
+    currentPlayer = players.at(playerIndx);
     while (currentPlayer->checkbankcorrupcy() || currentPlayer->jail_status()) {
-        playerIdx += 1;
-        playerIdx %= players.size();
-        currentPlayer = players.at(playerIdx);
+        playerIndx += 1;
+        currentPlayer = players.at(playerIndx);
     }
     int playerBoardIdx = show_diceroll(xroll1,xroll2);
     int newIndex = (currentPlayer->get_index() + playerBoardIdx) % GameController::board.size();
@@ -645,7 +645,9 @@ void GameController::show_rules(vector<string> ruleTxts) {
     for (string rule : ruleTxts) {
         cout << "rule : " << rule << endl;
     }
+    cout << "Player Name: " << GameController::currentPlayer->get_name() << "\n";
     Apply_rule(1);
+
 }
 RectangleShape createTileBox(float x, float y, float w, float h, Color color = Color::Transparent) {
     RectangleShape box({ w, h });
@@ -704,6 +706,28 @@ int GameController::showBoard() {
         playerUiTex[i].setSmooth(true);
     }
     vector<RectangleShape> boxes;
+    boxes.push_back(createTileBox(1390, 1395, 208, 208));
+    boxes.push_back(createTileBox(1260, 1395, 127, 208));
+    boxes.push_back(createTileBox(1130, 1395, 127, 208));
+    boxes.push_back(createTileBox(995, 1395, 127, 208));
+    boxes.push_back(createTileBox(865, 1395, 127, 208));
+    boxes.push_back(createTileBox(735, 1395, 127, 208));
+    boxes.push_back(createTileBox(605, 1395, 127, 208));
+    boxes.push_back(createTileBox(475, 1395, 127, 208));
+    boxes.push_back(createTileBox(345, 1395, 127, 208));
+    boxes.push_back(createTileBox(215, 1395, 127, 208));
+    boxes.push_back(createTileBox(0, 1395, 208, 208));
+
+    boxes.push_back(createTileBox(0, 1264, 208, 127));
+    boxes.push_back(createTileBox(0, 1134, 208, 127));
+    boxes.push_back(createTileBox(0, 1004, 208, 127));
+    boxes.push_back(createTileBox(0, 872, 208, 127));
+    boxes.push_back(createTileBox(0, 740, 208, 127));
+    boxes.push_back(createTileBox(0, 608, 208, 127));
+    boxes.push_back(createTileBox(0, 476, 208, 127));
+    boxes.push_back(createTileBox(0, 345, 208, 127));
+    boxes.push_back(createTileBox(0, 213, 208, 127));
+
     boxes.push_back(createTileBox(0, 0, 208, 208));
     boxes.push_back(createTileBox(215, 0, 127, 208));
     boxes.push_back(createTileBox(345, 0, 127, 208));
@@ -725,37 +749,19 @@ int GameController::showBoard() {
     boxes.push_back(createTileBox(1390, 1004, 208, 127));
     boxes.push_back(createTileBox(1390, 1134, 208, 127));
     boxes.push_back(createTileBox(1390, 1264, 208, 127));
-    boxes.push_back(createTileBox(1390, 1395, 208, 208));
 
-    boxes.push_back(createTileBox(0, 1395, 208, 208));
-    boxes.push_back(createTileBox(215, 1395, 127, 208));
-    boxes.push_back(createTileBox(345, 1395, 127, 208));
-    boxes.push_back(createTileBox(475, 1395, 127, 208));
-    boxes.push_back(createTileBox(605, 1395, 127, 208));
-    boxes.push_back(createTileBox(735, 1395, 127, 208));
-    boxes.push_back(createTileBox(865, 1395, 127, 208));
-    boxes.push_back(createTileBox(995, 1395, 127, 208));
-    boxes.push_back(createTileBox(1130, 1395, 127, 208));
-    boxes.push_back(createTileBox(1260, 1395, 127, 208));
-    boxes.push_back(createTileBox(1390, 1395, 208, 208));
-
-    boxes.push_back(createTileBox(0, 213, 208, 127));
-    boxes.push_back(createTileBox(0, 345, 208, 127));
-    boxes.push_back(createTileBox(0, 476, 208, 127));
-    boxes.push_back(createTileBox(0, 608, 208, 127));
-    boxes.push_back(createTileBox(0, 740, 208, 127));
-    boxes.push_back(createTileBox(0, 872, 208, 127));
-    boxes.push_back(createTileBox(0, 1004, 208, 127));
-    boxes.push_back(createTileBox(0, 1134, 208, 127));
-    boxes.push_back(createTileBox(0, 1264, 208, 127));
-    boxes.push_back(createTileBox(0, 1395, 208, 208));
-
+    sf::RectangleShape button(sf::Vector2f(150, 50));
+    button.setPosition({ 2150, 750 });
+    button.setFillColor(sf::Color::Transparent);
+    
     Font uiFont;
     if (!uiFont.openFromFile("Assets/agencyfb.ttf")) {
         cout << "Failed to load UI font!" << endl;
         return -1;
     }
 
+    Text buttonText(uiFont);
+   
     Text red(uiFont);
     Text blue(uiFont);
     Text green(uiFont);
@@ -791,7 +797,7 @@ int GameController::showBoard() {
     yellow.setPosition({ 1740, 570 });
     red.setPosition({ 1740, 670 });
     white.setPosition({ 2150,150 });
-
+    buttonText.setPosition({ 2050, 700 });
 
     // Initialize sprites
     Sprite boardSprite(boardTexture);
@@ -874,7 +880,7 @@ int GameController::showBoard() {
             if (event->is<sf::Event::Closed>()) {
                 window.close();
             }
-            if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left))
+            if (sf::Keyboard::isKeyPressed(Keyboard::Scan::Space))
             {
                 isRolling = true;
                 diceAnimationClock.restart();
@@ -888,7 +894,8 @@ int GameController::showBoard() {
             Time elapsed = diceAnimationClock.getElapsedTime();
             if (elapsed >= seconds(1.5f)) {
                 isRolling = false;
-                GameController::next_turn(roll1, roll2, 0);
+                GameController::next_turn(roll1, roll2);
+                GameController::playerIndx = (GameController::playerIndx + 1) % ((GameController::players.size()-1));
             }
             //update the bal
         }
@@ -903,6 +910,12 @@ int GameController::showBoard() {
             diceSprites[0].setTexture(diceTextures[roll1 - 1]);
             diceSprites[1].setTexture(diceTextures[roll2 - 1]);
         }
+        if (sf::Mouse::isButtonPressed(Mouse::Button::Left)) {
+                sf::Vector2i mousePos = sf::Mouse::getPosition(window);
+                if (button.getGlobalBounds().contains(static_cast<sf::Vector2f>(mousePos))) {
+                    std::cout << "Button clicked!" << std::endl;
+                }
+            }
 
         window.clear(Color::Color(23, 14, 28, 255));
 
@@ -931,13 +944,14 @@ int GameController::showBoard() {
         window.draw(green);
         window.draw(yellow);
         window.draw(white);
+        window.draw(button);
+        window.draw(buttonText);
         window.display();
     }
 }
 
 int main()
 {
-
     GameController::showBoard();
     return 0;
 }
