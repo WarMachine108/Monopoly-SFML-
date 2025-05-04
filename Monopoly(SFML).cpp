@@ -673,7 +673,7 @@ int GameController::showBoard() {
     settings.antiAliasingLevel = 8;
 
     // Load textures
-    Texture boardTexture, diceTextures[6], playerTextures[4], playerUiTex[4], uirect;
+    Texture boardTexture, diceTextures[6], playerTextures[4], playerUiTex[4], uirect, playerRect[4];
     if (!uirect.loadFromFile("Assets/uirect.png")) {
         cerr << "Failed to load board texture!" << endl;
         return -1;
@@ -704,6 +704,13 @@ int GameController::showBoard() {
             return -1;
         }
         playerUiTex[i].setSmooth(true);
+    }
+    for (int i = 0; i < 4; i++) {
+        if (!playerRect[i].loadFromFile("Assets/rect_" + to_string(i + 1) + ".jpg")) {
+            cerr << "Failed to load player texture " << i + 1 << endl;
+            return -1;
+        }
+        playerRect[i].setSmooth(true);
     }
     vector<RectangleShape> boxes;
     boxes.push_back(createTileBox(1390, 1395, 208, 208));
@@ -825,10 +832,9 @@ int GameController::showBoard() {
     Sprite playerSprites[4] = { Sprite(playerTextures[0]), Sprite(playerTextures[1]) , Sprite(playerTextures[2]) , Sprite(playerTextures[3]) };
     Sprite pfpSprites[4] = { Sprite(playerUiTex[0]), Sprite(playerUiTex[1]) , Sprite(playerUiTex[2]) , Sprite(playerUiTex[3]) };
     Sprite uibox(uirect);
+    Sprite playerRects[4] = { Sprite(playerRect[0]), Sprite(playerRect[1]) , Sprite(playerRect[2]) , Sprite(playerRect[3]) };
 
 
-    diceSprites[0].setTexture(diceTextures[0]);
-    diceSprites[1].setTexture(diceTextures[0]);
     diceSprites[0].setPosition({ 1620, 50 });
     diceSprites[1].setPosition({ 1850, 50 });
     diceSprites[0].scale({ 0.5f, 0.5f });
@@ -836,6 +842,18 @@ int GameController::showBoard() {
 
     uibox.setPosition({ 1625, 325 });
     uibox.scale({ 1.14f, 0.95f });
+
+	playerRects[0].setPosition({ 1630, 350 });
+	playerRects[0].scale({ 0.2f, 0.2f });
+
+	playerRects[1].setPosition({ 1630, 450 });
+	playerRects[1].scale({ 0.2f, 0.2f });
+
+    playerRects[2].setPosition({ 1630, 550 });
+    playerRects[2].scale({ 0.2f, 0.2f });
+
+    playerRects[3].setPosition({ 1650, 650 });
+    playerRects[3].scale({ 0.2f, 0.2f });
 
     playerSprites[0].scale({ 0.18f, 0.18f });
     playerSprites[0].setPosition({ 1475,1550 });
@@ -972,6 +990,10 @@ int GameController::showBoard() {
         window.draw(blue_bal);
         window.draw(green_bal);
         window.draw(yellow_bal);
+        //Draw this shit gng !!!
+        /*if (currentPlayer) {
+            window.draw(playerRects[currentPlayer->get_index()]);
+        }*/
         window.draw(button);
         window.draw(buttonText);
         window.display();
