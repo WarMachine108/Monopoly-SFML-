@@ -27,11 +27,11 @@ public:
     static vector <Tile*> board;
     static vector<string> get_rule_txt();
     static void show_diceroll(int roll1, int roll2, int index);
-    static void next_turn(int playerIdx);
+    static void next_turn(int playerIdx, int r1, int r2);
     static void apply_rule(string player, vector<Rule*>Rules);
     static void show_rules(vector<string> ruleTxts);
     static void end_game();
-    static void showBoard();
+    static int showBoard();
     ~GameController() {}
 };
 
@@ -577,12 +577,10 @@ void GameController::show_diceroll(int roll1, int roll2, int index) {
     cout << "current player index : " << index << endl;
 }
 
-void GameController::next_turn(int playerIdx) {
+void GameController::next_turn(int playerIdx, int r1, int r2) {
     srand(time(0));
-    int roll1 = 1 + rand() % 6;
-    int roll2 = 1 + rand() % 6;
     currentPlayer = players.at(playerIdx);
-    show_diceroll(roll1, roll2, currentPlayer->change_index(5));
+    show_diceroll(r1, r2, currentPlayer->change_index(r1+r2));
     currentTile = board[currentPlayer->get_index()];
     vector<string> strArr = get_rule_txt();
     show_rules(strArr);
@@ -591,18 +589,17 @@ void GameController::next_turn(int playerIdx) {
 void GameController::apply_rule(string player, vector<Rule*>Rules) {
 
 }
+
 void GameController::show_rules(vector<string> ruleTxts) {
-    cout << "rule : " << ruleTxts[0];
+    cout << "rule : " << ruleTxts[0] << "\n";
 }
+
 void GameController::end_game() {
 
 }
-void GameController::showBoard() {
-    cout << "board has been initialised" << endl;
-}
 
 RectangleShape createTileBox(float x, float y, float w, float h, Color color = Color::Transparent) {
-    RectangleShape box({w, h});
+    RectangleShape box({ w, h });
     box.setPosition({ x, y });
     box.setFillColor(color);
     box.setOutlineColor(Color::Red);
@@ -610,8 +607,9 @@ RectangleShape createTileBox(float x, float y, float w, float h, Color color = C
     return box;
 }
 
-int main()
-{
+int GameController::showBoard() {
+    cout << "board has been initialised" << endl;
+
     // Initialize game state variables
     bool isRolling = false;
     int finalRoll1 = 1, finalRoll2 = 1;
@@ -621,7 +619,7 @@ int main()
     int tileCountPerSide = 11;
     float tileSize = windowSize / 11;
 
-    RenderWindow window(VideoMode({ 2560, 1600}), "Monopoly");
+    RenderWindow window(VideoMode({ 2560, 1600 }), "Monopoly");
     window.setFramerateLimit(60);
     ContextSettings settings;
     settings.antiAliasingLevel = 8;
@@ -648,6 +646,12 @@ int main()
         playerTextures[i].setSmooth(true);
     }
 
+    sf::Font uiFont;
+    if (!uiFont.openFromFile("Assets/times.ttf")) {
+        cout << "Failed to load UI font!" << endl;
+        return -1;
+    }
+
     // Initialize sprites
     Sprite boardSprite(boardTexture);
     Sprite diceSprites[2] = { Sprite(diceTextures[0]), Sprite(diceTextures[0]) };
@@ -655,31 +659,59 @@ int main()
     diceSprites[0].setTexture(diceTextures[0]);
     diceSprites[1].setTexture(diceTextures[0]);
     diceSprites[0].setPosition({ 1825, 50 });
-    diceSprites[1].setPosition({2050, 50});
+    diceSprites[1].setPosition({ 2050, 50 });
     diceSprites[0].scale({ 0.5f, 0.5f });
     diceSprites[1].scale({ 0.5f, 0.5f });
 
-    playerSprites[0].scale({ 0.03f, 0.03f });
-    playerSprites[0].setPosition({ 1520,1550 });
-    playerSprites[0].rotate(degrees(90));
+    playerSprites[0].scale({ 0.18f, 0.18f });
+    playerSprites[0].setPosition({ 1475,1550 });
 
-    playerSprites[1].scale({ 0.12, 0.12f });
-    playerSprites[1].setPosition({ 1520,1480 });
-    playerSprites[1].rotate(degrees(90));
+    playerSprites[1].scale({ 0.18f, 0.18f });
+    playerSprites[1].setPosition({ 1465,1480 });
 
-    playerSprites[2].scale({ 0.12f, 0.12f });
-    playerSprites[2].setPosition({ 1600,1480 });
-    playerSprites[2].rotate(degrees(90));
+    playerSprites[2].scale({ 0.18f, 0.18f });
+    playerSprites[2].setPosition({ 1545,1480 });
 
-    playerSprites[3].scale({ 0.12f, 0.12f });
-    playerSprites[3].setPosition({ 1600,1550 });
-    playerSprites[3].rotate(degrees(90));
+    playerSprites[3].scale({ 0.18f, 0.18f });
+    playerSprites[3].setPosition({ 1545,1550 });
+
 
     // Game initialization
-    GameController::showBoard();
-    GameController::next_turn(0);
 
     vector<RectangleShape> boxes;
+
+    FloatRect bounds = playerSprites[0].getGlobalBounds();
+    RectangleShape bbox;
+    bbox.setPosition({ 1550,1550 });
+    bbox.setSize({ 30,45 });
+    bbox.setFillColor(sf::Color::Transparent); // No fill
+    bbox.setOutlineColor(sf::Color::Red);      // Red outline
+    bbox.setOutlineThickness(2.f);
+
+    FloatRect bounds1 = playerSprites[0].getGlobalBounds();
+    RectangleShape bbox1;
+    bbox1.setPosition({ 1550,1480 });
+    bbox1.setSize({ 30,45 });
+    bbox1.setFillColor(sf::Color::Transparent); // No fill
+    bbox1.setOutlineColor(sf::Color::Red);      // Red outline
+    bbox1.setOutlineThickness(2.f);
+
+    FloatRect bounds2 = playerSprites[0].getGlobalBounds();
+    RectangleShape bbox2;
+    bbox2.setPosition({ 1470,1480 });
+    bbox2.setSize({ 30,45 });
+    bbox2.setFillColor(sf::Color::Transparent); // No fill
+    bbox2.setOutlineColor(sf::Color::Red);      // Red outline
+    bbox2.setOutlineThickness(2.f);
+
+    FloatRect bounds3 = playerSprites[0].getGlobalBounds();
+    RectangleShape bbox3;
+    bbox3.setPosition({ 1480,1550 });
+    bbox3.setSize({ 30,45 });
+    bbox3.setFillColor(sf::Color::Transparent); // No fill
+    bbox3.setOutlineColor(sf::Color::Red);      // Red outline
+    bbox3.setOutlineThickness(2.f);
+
     for (int i = 0; i < tileCountPerSide; ++i) {
         float x = windowSize - (i + 1) * tileSize;
         boxes.push_back(createTileBox(x, windowSize - tileSize, tileSize, tileSize));
@@ -694,14 +726,13 @@ int main()
     for (int i = 1; i < tileCountPerSide - 1; ++i) {
         boxes.push_back(createTileBox(windowSize - tileSize, i * tileSize, tileSize, tileSize));
     }
-
     // Main game loop
     while (window.isOpen()) {
-        while (const optional event = window.pollEvent()){
-            if (event->is<Event::Closed>()){
+        while (const optional event = window.pollEvent()) {
+            if (event->is<Event::Closed>()) {
                 window.close();
             }
-            if (Keyboard::isKeyPressed(Keyboard::Key::Space) && !isRolling)
+            if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left))
             {
                 isRolling = true;
                 diceAnimationClock.restart();
@@ -715,9 +746,7 @@ int main()
             Time elapsed = diceAnimationClock.getElapsedTime();
             if (elapsed >= seconds(1.5f)) {
                 isRolling = false;
-                GameController::show_diceroll(finalRoll1, finalRoll2,
-                    GameController::currentPlayer->get_index());
-                GameController::next_turn(0);
+                GameController::next_turn(0, finalRoll1, finalRoll2);
             }
         }
 
@@ -731,7 +760,14 @@ int main()
             diceSprites[0].setTexture(diceTextures[finalRoll1 - 1]);
             diceSprites[1].setTexture(diceTextures[finalRoll2 - 1]);
         }
-        window.clear(Color::Color(50, 50, 50));
+
+        sf::RectangleShape panelBg(sf::Vector2f(600, 1600));
+        panelBg.setFillColor(sf::Color(30, 30, 60, 230));
+        panelBg.setOutlineColor(sf::Color(200, 200, 255));
+        panelBg.setOutlineThickness(4);
+        panelBg.setPosition({ 0, 0 });
+        window.draw(panelBg);
+
         window.draw(boardSprite);
         for (const auto& box : boxes)
             window.draw(box);
@@ -743,8 +779,16 @@ int main()
         window.draw(playerSprites[1]);
         window.draw(playerSprites[2]);
         window.draw(playerSprites[3]);
+        window.draw(bbox);
+        window.draw(bbox1);
+        window.draw(bbox2);
+        window.draw(bbox3);
         window.display();
     }
+}
 
+int main()
+{
+    GameController::showBoard();
     return 0;
 }
