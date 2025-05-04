@@ -652,6 +652,53 @@ int GameController::showBoard() {
         }
         playerUiTex[i].setSmooth(true);
     }
+    vector<RectangleShape> boxes;
+    boxes.push_back(createTileBox(0, 0, 208, 208));
+    boxes.push_back(createTileBox(215, 0, 127, 208));
+    boxes.push_back(createTileBox(345, 0, 127, 208));
+    boxes.push_back(createTileBox(475, 0, 127, 208));
+    boxes.push_back(createTileBox(605, 0, 127, 208));
+    boxes.push_back(createTileBox(735, 0, 127, 208));
+    boxes.push_back(createTileBox(865, 0, 127, 208));
+    boxes.push_back(createTileBox(995, 0, 127, 208));
+    boxes.push_back(createTileBox(1130, 0, 127, 208));
+    boxes.push_back(createTileBox(1260, 0, 127, 208));
+    boxes.push_back(createTileBox(1390, 0, 208, 208));
+
+    boxes.push_back(createTileBox(1390, 213, 208, 127));
+    boxes.push_back(createTileBox(1390, 345, 208, 127));
+    boxes.push_back(createTileBox(1390, 476, 208, 127));
+    boxes.push_back(createTileBox(1390, 608, 208, 127));
+    boxes.push_back(createTileBox(1390, 740, 208, 127));
+    boxes.push_back(createTileBox(1390, 872, 208, 127));
+    boxes.push_back(createTileBox(1390, 1004, 208, 127));
+    boxes.push_back(createTileBox(1390, 1134, 208, 127));
+    boxes.push_back(createTileBox(1390, 1264, 208, 127));
+    boxes.push_back(createTileBox(1390, 1395, 208, 208));
+
+    boxes.push_back(createTileBox(0, 1395, 208, 208));
+    boxes.push_back(createTileBox(215, 1395, 127, 208));
+    boxes.push_back(createTileBox(345, 1395, 127, 208));
+    boxes.push_back(createTileBox(475, 1395, 127, 208));
+    boxes.push_back(createTileBox(605, 1395, 127, 208));
+    boxes.push_back(createTileBox(735, 1395, 127, 208));
+    boxes.push_back(createTileBox(865, 1395, 127, 208));
+    boxes.push_back(createTileBox(995, 1395, 127, 208));
+    boxes.push_back(createTileBox(1130, 1395, 127, 208));
+    boxes.push_back(createTileBox(1260, 1395, 127, 208));
+    boxes.push_back(createTileBox(1390, 1395, 208, 208));
+
+    boxes.push_back(createTileBox(0, 213, 208, 127));
+    boxes.push_back(createTileBox(0, 345, 208, 127));
+    boxes.push_back(createTileBox(0, 476, 208, 127));
+    boxes.push_back(createTileBox(0, 608, 208, 127));
+    boxes.push_back(createTileBox(0, 740, 208, 127));
+    boxes.push_back(createTileBox(0, 872, 208, 127));
+    boxes.push_back(createTileBox(0, 1004, 208, 127));
+    boxes.push_back(createTileBox(0, 1134, 208, 127));
+    boxes.push_back(createTileBox(0, 1264, 208, 127));
+    boxes.push_back(createTileBox(0, 1395, 208, 208));
+
 
     Font uiFont;
     if (!uiFont.openFromFile("Assets/agencyfb.ttf")) {
@@ -729,9 +776,6 @@ int GameController::showBoard() {
     pfpSprites[3].setPosition({1650, 650});
 
     // Game initialization
-
-    vector<RectangleShape> boxes;
-
     FloatRect bounds = playerSprites[0].getGlobalBounds();
     RectangleShape bbox;
     bbox.setPosition({ 1550,1550 });
@@ -764,29 +808,6 @@ int GameController::showBoard() {
     bbox3.setOutlineColor(sf::Color::Red);      // Red outline
     bbox3.setOutlineThickness(2.f);
 
-    //RectangleShape createTileBox(float x, float y, float w, float h, Color color = Color::Transparent) {
-    //    RectangleShape box({ w, h });
-    //    box.setPosition({ x, y });
-    //    box.setFillColor(color);
-    //    box.setOutlineColor(Color::Red);
-    //    box.setOutlineThickness(2.f);
-    //    return box;
-    //}
-
-    for (int i = 0; i < tileCountPerSide; ++i) {
-        float x = windowSize - (i + 1) * tileSize;
-        boxes.push_back(createTileBox(x, windowSize - tileSize, tileSize, tileSize));
-    }
-    for (int i = 1; i < tileCountPerSide - 1; ++i) {
-        boxes.push_back(createTileBox(0, windowSize - (i + 1) * tileSize, tileSize, tileSize));
-    }
-    for (int i = 0; i < tileCountPerSide; ++i) {
-        float x = i * tileSize;
-        boxes.push_back(createTileBox(x, 0, tileSize, tileSize));
-    }
-    for (int i = 1; i < tileCountPerSide - 1; ++i) {
-        boxes.push_back(createTileBox(windowSize - tileSize, i * tileSize, tileSize, tileSize));
-    }
     // Main game loop
     while (window.isOpen()) {
         while (const optional event = window.pollEvent()) {
@@ -823,7 +844,7 @@ int GameController::showBoard() {
             diceSprites[1].setTexture(diceTextures[finalRoll2 - 1]);
         }
         
-        window.clear(Color::Color(50, 50, 50));
+        window.clear(Color::Color(57, 53, 101));
 
         window.draw(boardSprite);
         for (const auto& box : boxes)
