@@ -767,6 +767,10 @@ int GameController::showBoard() {
     Text green(uiFont);
     Text yellow(uiFont);
     Text white(uiFont);
+    Text red_bal(uiFont);
+    Text blue_bal(uiFont);
+    Text green_bal(uiFont);
+    Text yellow_bal(uiFont);
 
     red.setString("PLAYER RED");
     blue.setString("PLAYER BLUE");
@@ -779,24 +783,40 @@ int GameController::showBoard() {
     green.setCharacterSize(30);
     yellow.setCharacterSize(30);
     white.setCharacterSize(40);
+    red_bal.setCharacterSize(30);
+    blue_bal.setCharacterSize(30);
+    green_bal.setCharacterSize(30);
+    yellow_bal.setCharacterSize(30);
 
     red.setFillColor(Color::Color(255, 150, 155, 255));
     blue.setFillColor(Color::Color(170, 211, 210, 255));
     green.setFillColor(Color::Color(186, 222, 160, 255));
     yellow.setFillColor(Color::Color(249, 205, 136, 255));
     white.setFillColor(Color::White);
+    red_bal.setFillColor(Color::White);
+    blue_bal.setFillColor(Color::White);
+    green_bal.setFillColor(Color::White);
+    yellow_bal.setFillColor(Color::White);
 
     red.setStyle(Text::Bold);
     blue.setStyle(Text::Bold);
     green.setStyle(Text::Bold);
     yellow.setStyle(Text::Bold);
     white.setStyle(Text::Bold);
+    red_bal.setStyle(Text::Bold);
+    blue_bal.setStyle(Text::Bold);
+    green_bal.setStyle(Text::Bold);
+    yellow_bal.setStyle(Text::Bold);
 
     blue.setPosition({ 1740, 370 });
     green.setPosition({ 1740, 470 });
     yellow.setPosition({ 1740, 570 });
     red.setPosition({ 1740, 670 });
     white.setPosition({ 2150,150 });
+    blue_bal.setPosition({ 2420, 370 });
+    green_bal.setPosition({ 2420, 470 });
+    yellow_bal.setPosition({ 2420, 570 });
+    red_bal.setPosition({ 2420, 670 });
     buttonText.setPosition({ 2050, 700 });
 
     // Initialize sprites
@@ -897,7 +917,11 @@ int GameController::showBoard() {
                 GameController::next_turn(roll1, roll2);
                 GameController::playerIndx = (GameController::playerIndx + 1) % ((GameController::players.size()-1));
             }
-            //update the bal
+            //BGYR
+            red_bal.setString("$" + to_string(players[3]->getBalance()));
+            blue_bal.setString("$" + to_string(players[0]->getBalance()));
+            green_bal.setString("$" + to_string(players[1]->getBalance()));
+            yellow_bal.setString("$" + to_string(players[2]->getBalance()));
         }
 
         // Animation update
@@ -944,6 +968,10 @@ int GameController::showBoard() {
         window.draw(green);
         window.draw(yellow);
         window.draw(white);
+        window.draw(red_bal);
+        window.draw(blue_bal);
+        window.draw(green_bal);
+        window.draw(yellow_bal);
         window.draw(button);
         window.draw(buttonText);
         window.display();
