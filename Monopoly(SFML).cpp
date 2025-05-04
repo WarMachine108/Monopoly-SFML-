@@ -1,4 +1,4 @@
-﻿#include<iostream>
+#include<iostream>
 #include<string.h>
 #include<vector>
 #include<cstdlib>
@@ -364,7 +364,7 @@ void chance3::apply_rule() {
     player->change_balance(-20);
 }
 string chance3::getTitle() {
-    return " �Drunk in charge� fine $20 ";
+    return "  Drunk in charge  fine $20 ";
 }
 void chance4::apply_rule() {
     Player* player = GameController::currentPlayer;
@@ -625,7 +625,12 @@ int GameController::showBoard() {
     settings.antiAliasingLevel = 8;
 
     // Load textures
-    Texture boardTexture, diceTextures[6], playerTextures[4], playerUiTex[4];
+    Texture boardTexture, diceTextures[6], playerTextures[4], playerUiTex[4], uirect;
+    if (!uirect.loadFromFile("Assets/uirect.png")) {
+        cerr << "Failed to load board texture!" << endl;
+        return -1;
+    }
+    
     if (!boardTexture.loadFromFile("Assets/Board.jpg")) {
         cerr << "Failed to load board texture!" << endl;
         return -1;
@@ -699,12 +704,13 @@ int GameController::showBoard() {
     boxes.push_back(createTileBox(0, 1264, 208, 127));
     boxes.push_back(createTileBox(0, 1395, 208, 208));
 
-
     Font uiFont;
     if (!uiFont.openFromFile("Assets/agencyfb.ttf")) {
         cout << "Failed to load UI font!" << endl;
         return -1;
     }
+
+    
 
     Text red(uiFont);
     Text blue(uiFont);
@@ -742,6 +748,7 @@ int GameController::showBoard() {
     Sprite diceSprites[2] = { Sprite(diceTextures[0]), Sprite(diceTextures[0]) };
     Sprite playerSprites[4] = { Sprite(playerTextures[0]), Sprite(playerTextures[1]) , Sprite(playerTextures[2]) , Sprite(playerTextures[3]) };
     Sprite pfpSprites[4] = { Sprite(playerUiTex[0]), Sprite(playerUiTex[1]) , Sprite(playerUiTex[2]) , Sprite(playerUiTex[3]) };
+    Sprite uibox(uirect);
 
 
     diceSprites[0].setTexture(diceTextures[0]);
@@ -750,6 +757,9 @@ int GameController::showBoard() {
     diceSprites[1].setPosition({ 2050, 50 });
     diceSprites[0].scale({ 0.5f, 0.5f });
     diceSprites[1].scale({ 0.5f, 0.5f });
+
+    uibox.setPosition({ 1625, 325 });
+    uibox.scale({ 1.12f, 1.0f });
 
     playerSprites[0].scale({ 0.18f, 0.18f });
     playerSprites[0].setPosition({ 1475,1550 });
@@ -844,7 +854,7 @@ int GameController::showBoard() {
             diceSprites[1].setTexture(diceTextures[finalRoll2 - 1]);
         }
         
-        window.clear(Color::Color(57, 53, 101));
+        window.clear(Color::Color(23, 14, 28, 255));
 
         window.draw(boardSprite);
         for (const auto& box : boxes)
@@ -857,6 +867,7 @@ int GameController::showBoard() {
         window.draw(playerSprites[1]);
         window.draw(playerSprites[2]);
         window.draw(playerSprites[3]);
+        window.draw(uibox);
         window.draw(pfpSprites[0]);
         window.draw(pfpSprites[1]);
         window.draw(pfpSprites[2]);
@@ -869,6 +880,7 @@ int GameController::showBoard() {
         window.draw(blue);
         window.draw(green);
         window.draw(yellow);
+
         window.display();
     }
 }
