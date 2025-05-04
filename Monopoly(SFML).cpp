@@ -26,8 +26,8 @@ public:
     static vector<Player*> players;
     static vector <Tile*> board;
     static vector<string> get_rule_txt();
-    static int show_diceroll();
-    static void next_turn(int playerIdx);
+    static int show_diceroll(int r1, int r2);
+    static void next_turn(int xroll1, int xroll2, int playerIdx);
     static void Apply_rule(int ruleIndex);
     static void show_rules(vector<string> ruleTxts);
     static void end_game();
@@ -553,10 +553,10 @@ vector<Rule*> GameController::rules = {
     new GeneralRule
 };
 vector<Player*> GameController::players = {
-    new Player("red"),
-    new Player("green"),
-    new Player("blue"),
-    new Player("yellow")
+    new Player("Blue"),
+    new Player("Green"),
+    new Player("Yellow"),
+    new Player("Red")
 };
 
 vector <Tile*> GameController::board = {
@@ -612,23 +612,20 @@ vector<string> GameController::get_rule_txt() {
     return ruleTxts;
 }
 
-
-int GameController::show_diceroll() {
+int GameController::show_diceroll(int r1, int r2) {
     //now we'll wait till the button is clicked, when dice roll is clicked we'll execute this->
-    int roll1 = 1 + rand() % 6;
-    int roll2 = 1 + rand() % 6;
-    cout << roll1 + roll2;
-    return roll1 + roll2;
+    cout << r1 + r2 << "\n";
+    return r1 + r2; 
 }
 
-void GameController::next_turn(int playerIdx) {
-    currentPlayer = players.at(playerIndx);
+void GameController::next_turn(int xroll1, int xroll2, int playerIdx) {
+    currentPlayer = players.at(playerIdx);
     while (currentPlayer->checkbankcorrupcy() || currentPlayer->jail_status()) {
-        playerIndx += 1;
-        playerIndx %= players.size();
-        currentPlayer = players.at(playerIndx);
+        playerIdx += 1;
+        playerIdx %= players.size();
+        currentPlayer = players.at(playerIdx);
     }
-    int playerBoardIdx = show_diceroll();
+    int playerBoardIdx = show_diceroll(xroll1,xroll2);
     int newIndex = (currentPlayer->get_index() + playerBoardIdx) % GameController::board.size();
     currentPlayer->edit_index(newIndex);
     vector<string> strArr = get_rule_txt();
@@ -641,7 +638,7 @@ void GameController::Apply_rule(int ruleIndex) {
         rules[ruleIndex]->apply_rule();
     }
     else {
-        std::cerr << "Invalid ruleIndex: " << ruleIndex << std::endl;
+        std::cerr << "Invalid ruleIndex: " << ruleIndex << endl;
     }
 }
 void GameController::show_rules(vector<string> ruleTxts) {
@@ -664,12 +661,9 @@ int GameController::showBoard() {
 
     // Initialize game state variables
     bool isRolling = false;
-    int finalRoll1 = 1, finalRoll2 = 1;
+    int roll1 = 1, roll2 = 1;
     Clock diceAnimationClock;
     const Time frameDuration = milliseconds(100);
-    int windowSize = 1600;
-    int tileCountPerSide = 11;
-    float tileSize = windowSize / 11;
 
     RenderWindow window(VideoMode({ 2560, 1600 }), "Monopoly");
     window.setFramerateLimit(60);
@@ -766,31 +760,37 @@ int GameController::showBoard() {
     Text blue(uiFont);
     Text green(uiFont);
     Text yellow(uiFont);
+    Text white(uiFont);
 
     red.setString("PLAYER RED");
     blue.setString("PLAYER BLUE");
     green.setString("PLAYER GREEN");
     yellow.setString("PLAYER YELLOW");
+    white.setString("PRESS SPACE TO ROLL DICE");
 
     red.setCharacterSize(30);
     blue.setCharacterSize(30);
     green.setCharacterSize(30);
     yellow.setCharacterSize(30);
+    white.setCharacterSize(40);
 
     red.setFillColor(Color::Color(255, 150, 155, 255));
     blue.setFillColor(Color::Color(170, 211, 210, 255));
     green.setFillColor(Color::Color(186, 222, 160, 255));
     yellow.setFillColor(Color::Color(249, 205, 136, 255));
+    white.setFillColor(Color::White);
 
     red.setStyle(Text::Bold);
     blue.setStyle(Text::Bold);
     green.setStyle(Text::Bold);
     yellow.setStyle(Text::Bold);
+    white.setStyle(Text::Bold);
 
     blue.setPosition({ 1740, 370 });
     green.setPosition({ 1740, 470 });
     yellow.setPosition({ 1740, 570 });
     red.setPosition({ 1740, 670 });
+    white.setPosition({ 2150,150 });
 
 
     // Initialize sprites
@@ -803,13 +803,13 @@ int GameController::showBoard() {
 
     diceSprites[0].setTexture(diceTextures[0]);
     diceSprites[1].setTexture(diceTextures[0]);
-    diceSprites[0].setPosition({ 1825, 50 });
-    diceSprites[1].setPosition({ 2050, 50 });
+    diceSprites[0].setPosition({ 1620, 50 });
+    diceSprites[1].setPosition({ 1850, 50 });
     diceSprites[0].scale({ 0.5f, 0.5f });
     diceSprites[1].scale({ 0.5f, 0.5f });
 
     uibox.setPosition({ 1625, 325 });
-    uibox.scale({ 1.12f, 1.0f });
+    uibox.scale({ 1.14f, 0.95f });
 
     playerSprites[0].scale({ 0.18f, 0.18f });
     playerSprites[0].setPosition({ 1475,1550 });
@@ -878,8 +878,8 @@ int GameController::showBoard() {
             {
                 isRolling = true;
                 diceAnimationClock.restart();
-                finalRoll1 = rand() % 6 + 1;
-                finalRoll2 = rand() % 6 + 1;
+                roll1 = rand() % 6 + 1;
+                roll2 = rand() % 6 + 1;
             }
         }
 
@@ -888,7 +888,7 @@ int GameController::showBoard() {
             Time elapsed = diceAnimationClock.getElapsedTime();
             if (elapsed >= seconds(1.5f)) {
                 isRolling = false;
-                GameController::next_turn(0);
+                GameController::next_turn(roll1, roll2, 0);
             }
             //update the bal
         }
@@ -900,8 +900,8 @@ int GameController::showBoard() {
             diceSprites[1].setTexture(diceTextures[(frame + 3) % 6]);
         }
         else {
-            diceSprites[0].setTexture(diceTextures[finalRoll1 - 1]);
-            diceSprites[1].setTexture(diceTextures[finalRoll2 - 1]);
+            diceSprites[0].setTexture(diceTextures[roll1 - 1]);
+            diceSprites[1].setTexture(diceTextures[roll2 - 1]);
         }
 
         window.clear(Color::Color(23, 14, 28, 255));
@@ -930,7 +930,7 @@ int GameController::showBoard() {
         window.draw(blue);
         window.draw(green);
         window.draw(yellow);
-
+        window.draw(white);
         window.display();
     }
 }
