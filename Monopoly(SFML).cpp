@@ -653,16 +653,50 @@ int GameController::showBoard() {
         playerUiTex[i].setSmooth(true);
     }
 
-    sf::Font uiFont;
-    if (!uiFont.openFromFile("Assets/times.ttf")) {
+    Font uiFont;
+    if (!uiFont.openFromFile("Assets/agencyfb.ttf")) {
         cout << "Failed to load UI font!" << endl;
         return -1;
     }
+
+    Text red(uiFont);
+    Text blue(uiFont);
+    Text green(uiFont);
+    Text yellow(uiFont);
+
+    red.setString("PLAYER RED");
+    blue.setString("PLAYER BLUE");
+    green.setString("PLAYER GREEN");
+    yellow.setString("PLAYER YELLOW");
+
+    red.setCharacterSize(30);
+    blue.setCharacterSize(30);
+    green.setCharacterSize(30);
+    yellow.setCharacterSize(30);
+
+    red.setFillColor(Color::Color(255, 150, 155, 255));
+    blue.setFillColor(Color::Color(170, 211, 210, 255));
+    green.setFillColor(Color::Color(186, 222, 160, 255));
+    yellow.setFillColor(Color::Color(249, 205, 136, 255));
+
+    red.setStyle(Text::Bold);
+    blue.setStyle(Text::Bold);
+    green.setStyle(Text::Bold);
+    yellow.setStyle(Text::Bold);
+
+    blue.setPosition({ 1740, 370 });
+    green.setPosition({ 1740, 470 });
+    yellow.setPosition({ 1740, 570 });
+    red.setPosition({ 1740, 670 });
+
 
     // Initialize sprites
     Sprite boardSprite(boardTexture);
     Sprite diceSprites[2] = { Sprite(diceTextures[0]), Sprite(diceTextures[0]) };
     Sprite playerSprites[4] = { Sprite(playerTextures[0]), Sprite(playerTextures[1]) , Sprite(playerTextures[2]) , Sprite(playerTextures[3]) };
+    Sprite pfpSprites[4] = { Sprite(playerUiTex[0]), Sprite(playerUiTex[1]) , Sprite(playerUiTex[2]) , Sprite(playerUiTex[3]) };
+
+
     diceSprites[0].setTexture(diceTextures[0]);
     diceSprites[1].setTexture(diceTextures[0]);
     diceSprites[0].setPosition({ 1825, 50 });
@@ -682,6 +716,17 @@ int GameController::showBoard() {
     playerSprites[3].scale({ 0.18f, 0.18f });
     playerSprites[3].setPosition({ 1545,1550 });
 
+    pfpSprites[0].scale({ 0.2f, 0.2f }); 
+    pfpSprites[0].setPosition({1650, 350});
+
+    pfpSprites[1].scale({ 0.2f, 0.2f });
+    pfpSprites[1].setPosition({1650, 450});
+
+    pfpSprites[2].scale({ 0.2f, 0.2f });
+    pfpSprites[2].setPosition({1650, 550});
+
+    pfpSprites[3].scale({ 0.2f, 0.2f });
+    pfpSprites[3].setPosition({1650, 650});
 
     // Game initialization
 
@@ -764,6 +809,7 @@ int GameController::showBoard() {
                 isRolling = false;
                 GameController::next_turn(0, finalRoll1, finalRoll2);
             }
+            //update the bal
         }
 
         // Animation update
@@ -790,10 +836,18 @@ int GameController::showBoard() {
         window.draw(playerSprites[1]);
         window.draw(playerSprites[2]);
         window.draw(playerSprites[3]);
+        window.draw(pfpSprites[0]);
+        window.draw(pfpSprites[1]);
+        window.draw(pfpSprites[2]);
+        window.draw(pfpSprites[3]);
         window.draw(bbox);
         window.draw(bbox1);
         window.draw(bbox2);
         window.draw(bbox3);
+        window.draw(red);
+        window.draw(blue);
+        window.draw(green);
+        window.draw(yellow);
         window.display();
     }
 }
