@@ -602,7 +602,7 @@ RectangleShape createTileBox(float x, float y, float w, float h, Color color = C
     RectangleShape box({ w, h });
     box.setPosition({ x, y });
     box.setFillColor(color);
-    box.setOutlineColor(Color::Red);
+    box.setOutlineColor(Color::Transparent);
     box.setOutlineThickness(2.f);
     return box;
 }
@@ -615,11 +615,11 @@ int GameController::showBoard() {
     int finalRoll1 = 1, finalRoll2 = 1;
     Clock diceAnimationClock;
     const Time frameDuration = milliseconds(100);
-    int windowSize = 1600;
-    int tileCountPerSide = 11;
-    float tileSize = windowSize / 11;
-
-    RenderWindow window(VideoMode({ 2560, 1600 }), "Monopoly");
+    bool isOver = false;
+    bool isPressedInside = false;
+    bool isMousePressed = false;
+    
+    RenderWindow window(VideoMode({ 2560, 1600 }), "Game of Monopoly");
     window.setFramerateLimit(60);
     ContextSettings settings;
     settings.antiAliasingLevel = 8;
@@ -710,37 +710,41 @@ int GameController::showBoard() {
         return -1;
     }
 
-    
-
     Text red(uiFont);
     Text blue(uiFont);
     Text green(uiFont);
     Text yellow(uiFont);
+    Text white(uiFont);
 
     red.setString("PLAYER RED");
     blue.setString("PLAYER BLUE");
     green.setString("PLAYER GREEN");
     yellow.setString("PLAYER YELLOW");
+    white.setString("PRESS SPACE TO ROLL DICE");
 
     red.setCharacterSize(30);
     blue.setCharacterSize(30);
     green.setCharacterSize(30);
     yellow.setCharacterSize(30);
+    white.setCharacterSize(40);
 
     red.setFillColor(Color::Color(255, 150, 155, 255));
     blue.setFillColor(Color::Color(170, 211, 210, 255));
     green.setFillColor(Color::Color(186, 222, 160, 255));
     yellow.setFillColor(Color::Color(249, 205, 136, 255));
+    white.setFillColor(Color::White);
 
     red.setStyle(Text::Bold);
     blue.setStyle(Text::Bold);
     green.setStyle(Text::Bold);
     yellow.setStyle(Text::Bold);
+    white.setStyle(Text::Bold);
 
     blue.setPosition({ 1740, 370 });
     green.setPosition({ 1740, 470 });
     yellow.setPosition({ 1740, 570 });
     red.setPosition({ 1740, 670 });
+    white.setPosition({ 2150,150 });
 
 
     // Initialize sprites
@@ -753,13 +757,13 @@ int GameController::showBoard() {
 
     diceSprites[0].setTexture(diceTextures[0]);
     diceSprites[1].setTexture(diceTextures[0]);
-    diceSprites[0].setPosition({ 1825, 50 });
-    diceSprites[1].setPosition({ 2050, 50 });
+    diceSprites[0].setPosition({ 1620, 50 });
+    diceSprites[1].setPosition({ 1850, 50 });
     diceSprites[0].scale({ 0.5f, 0.5f });
     diceSprites[1].scale({ 0.5f, 0.5f });
 
     uibox.setPosition({ 1625, 325 });
-    uibox.scale({ 1.12f, 1.0f });
+    uibox.scale({ 1.14f, 0.95f });
 
     playerSprites[0].scale({ 0.18f, 0.18f });
     playerSprites[0].setPosition({ 1475,1550 });
@@ -824,7 +828,7 @@ int GameController::showBoard() {
             if (event->is<Event::Closed>()) {
                 window.close();
             }
-            if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left))
+            if (sf::Keyboard::isKeyPressed(Keyboard::Scan::Space))
             {
                 isRolling = true;
                 diceAnimationClock.restart();
@@ -880,7 +884,7 @@ int GameController::showBoard() {
         window.draw(blue);
         window.draw(green);
         window.draw(yellow);
-
+        window.draw(white);
         window.display();
     }
 }
