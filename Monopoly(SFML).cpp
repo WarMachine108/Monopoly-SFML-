@@ -625,7 +625,7 @@ int GameController::showBoard() {
     settings.antiAliasingLevel = 8;
 
     // Load textures
-    Texture boardTexture, diceTextures[6], playerTextures[4];
+    Texture boardTexture, diceTextures[6], playerTextures[4], playerUiTex[4];
     if (!boardTexture.loadFromFile("Assets/Board.jpg")) {
         cerr << "Failed to load board texture!" << endl;
         return -1;
@@ -644,6 +644,13 @@ int GameController::showBoard() {
             return -1;
         }
         playerTextures[i].setSmooth(true);
+    }
+    for (int i = 0; i < 4; i++) {
+        if (!playerUiTex[i].loadFromFile("Assets/pfp_" + to_string(i + 1) + ".jpg")) {
+            cerr << "Failed to load player texture " << i + 1 << endl;
+            return -1;
+        }
+        playerUiTex[i].setSmooth(true);
     }
 
     sf::Font uiFont;
@@ -711,6 +718,15 @@ int GameController::showBoard() {
     bbox3.setFillColor(sf::Color::Transparent); // No fill
     bbox3.setOutlineColor(sf::Color::Red);      // Red outline
     bbox3.setOutlineThickness(2.f);
+
+    //RectangleShape createTileBox(float x, float y, float w, float h, Color color = Color::Transparent) {
+    //    RectangleShape box({ w, h });
+    //    box.setPosition({ x, y });
+    //    box.setFillColor(color);
+    //    box.setOutlineColor(Color::Red);
+    //    box.setOutlineThickness(2.f);
+    //    return box;
+    //}
 
     for (int i = 0; i < tileCountPerSide; ++i) {
         float x = windowSize - (i + 1) * tileSize;
