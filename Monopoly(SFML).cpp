@@ -1,4 +1,4 @@
-﻿#include<iostream>
+#include<iostream>
 #include<string.h>
 #include<vector>
 #include<cstdlib>
@@ -364,7 +364,7 @@ void chance3::apply_rule() {
     player->change_balance(-20);
 }
 string chance3::getTitle() {
-    return " �Drunk in charge� fine $20 ";
+    return "  Drunk in charge  fine $20 ";
 }
 void chance4::apply_rule() {
     Player* player = GameController::currentPlayer;
