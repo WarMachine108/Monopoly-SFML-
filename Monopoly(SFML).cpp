@@ -760,13 +760,8 @@ int GameController::showBoard() {
             diceSprites[0].setTexture(diceTextures[finalRoll1 - 1]);
             diceSprites[1].setTexture(diceTextures[finalRoll2 - 1]);
         }
-
-        sf::RectangleShape panelBg(sf::Vector2f(600, 1600));
-        panelBg.setFillColor(sf::Color(30, 30, 60, 230));
-        panelBg.setOutlineColor(sf::Color(200, 200, 255));
-        panelBg.setOutlineThickness(4);
-        panelBg.setPosition({ 0, 0 });
-        window.draw(panelBg);
+        
+        window.clear(Color::Color(50, 50, 50));
 
         window.draw(boardSprite);
         for (const auto& box : boxes)
