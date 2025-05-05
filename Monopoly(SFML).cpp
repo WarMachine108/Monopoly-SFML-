@@ -956,6 +956,7 @@ int GameController::showBoard() {
 
         Text yellow_bal(uiFont);
 
+
         red.setString("PLAYER RED");
         blue.setString("PLAYER BLUE");
         green.setString("PLAYER GREEN");
