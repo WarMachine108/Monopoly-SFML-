@@ -564,7 +564,7 @@ vector<Rule*> Commodity::get_rules() {
             int roll1 = 1 + rand() % 6;
             int roll2 = 1 + rand() % 6;
             rent = roll1 + roll2;
-            player->change_balance(-rent);
+            player->change_balance(rent);
             for (Player* plyr : GameController::players) {
                 if (plyr->get_name() == owner->get_name()) {
                     plyr->change_balance(rent);
@@ -628,45 +628,85 @@ vector<Player*> GameController::players = {
 
 vector <Tile*> GameController::board = {
     new TaxEvent("GO",150),
+
     new Property("Mediterranean Avenue", 60, -2),
+
     new CommunityChest("Community Chest"),
+
     new Property("Baltic Avenue", 60, -4),
+
     new TaxEvent("Income Tax", -400),
+
     new Commodity("Reading Railroad", 200),
+
     new Property("Oriental Avenue", 100, -6),
+
     new Chance("Chance"),
+
     new Property("Vermont Avenue", 100, -6),
+
     new Property("Connecticut Avenue", 120, -8),
+
     new JailEvent("Jail (Just Visiting)"),
+
     new Property("St. Charles Place", 140, -10),
+
     new Commodity("Electric Company", 150),
+
     new Property("States Avenue", 140, -10),
+
     new Property("Virginia Avenue", 160, -12),
+
     new Commodity("Pennsylvania Railroad", 200),
+
     new Property("St. James Place", 180, -14),
+
     new CommunityChest("Community Chest"),
+
     new Property("Tennessee Avenue", 180, -14),
+
     new Property("New York Avenue", 200, -16),
+
     new TaxEvent("Free Parking",0),
+
     new Property("Kentucky Avenue",220, -18),
+
     new Chance("Chance"),
+
     new Property("Indiana Avenue", 220, -18),
+
     new Property("Illinois Avenue",240, -20),
+
     new Commodity("B&O Railroad", 200),
+
     new Property("Atlantic Avenue", 260, -22),
+
     new Property("Ventnor Avenue", 260, -22),
+
     new Commodity("Water Works", 150),
+
     new Property("Marvin Gardens", 280, -24),
+
     new JailEvent("Go to Jail"),
+
     new Property("Pacific Avenue", 300, -26),
+
     new Property("North Carolina Avenue", 300, -26),
+
     new CommunityChest("Community Chest"),
+
     new Property("Pennsylvania Avenue", 320, -28),
+
     new Commodity("Short Line Railroad", 200),
+
     new Chance("Chance"),
+
     new Property("Park Place", 350, -35),
+
     new TaxEvent("Luxury Tax", -100),
+
     new Property("Boardwalk", 400, -50)
+
 };
 
 vector<string> GameController::get_rule_txt() {
@@ -795,44 +835,83 @@ int GameController::showBoard() {
 
         vector<RectangleShape> boxes;
         boxes.push_back(createTileBox(1390, 1395, 208, 208));
+
         boxes.push_back(createTileBox(1260, 1395, 127, 208));
+
         boxes.push_back(createTileBox(1130, 1395, 127, 208));
+
         boxes.push_back(createTileBox(995, 1395, 127, 208));
+
         boxes.push_back(createTileBox(865, 1395, 127, 208));
+
         boxes.push_back(createTileBox(735, 1395, 127, 208));
+
         boxes.push_back(createTileBox(605, 1395, 127, 208));
+
         boxes.push_back(createTileBox(475, 1395, 127, 208));
+
         boxes.push_back(createTileBox(345, 1395, 127, 208));
+
         boxes.push_back(createTileBox(215, 1395, 127, 208));
+
         boxes.push_back(createTileBox(0, 1395, 208, 208));
+
         boxes.push_back(createTileBox(0, 1264, 208, 127));
+
         boxes.push_back(createTileBox(0, 1134, 208, 127));
+
         boxes.push_back(createTileBox(0, 1004, 208, 127));
+
         boxes.push_back(createTileBox(0, 872, 208, 127));
+
         boxes.push_back(createTileBox(0, 740, 208, 127));
+
         boxes.push_back(createTileBox(0, 608, 208, 127));
+
         boxes.push_back(createTileBox(0, 476, 208, 127));
+
         boxes.push_back(createTileBox(0, 345, 208, 127));
+
         boxes.push_back(createTileBox(0, 213, 208, 127));
+
         boxes.push_back(createTileBox(0, 0, 208, 208));
+
         boxes.push_back(createTileBox(215, 0, 127, 208));
+
         boxes.push_back(createTileBox(345, 0, 127, 208));
+
         boxes.push_back(createTileBox(475, 0, 127, 208));
+
         boxes.push_back(createTileBox(605, 0, 127, 208));
+
         boxes.push_back(createTileBox(735, 0, 127, 208));
+
         boxes.push_back(createTileBox(865, 0, 127, 208));
+
         boxes.push_back(createTileBox(995, 0, 127, 208));
+
         boxes.push_back(createTileBox(1130, 0, 127, 208));
+
         boxes.push_back(createTileBox(1260, 0, 127, 208));
+
         boxes.push_back(createTileBox(1390, 0, 208, 208));
+
         boxes.push_back(createTileBox(1390, 213, 208, 127));
+
         boxes.push_back(createTileBox(1390, 345, 208, 127));
+
         boxes.push_back(createTileBox(1390, 476, 208, 127));
+
         boxes.push_back(createTileBox(1390, 608, 208, 127));
+
         boxes.push_back(createTileBox(1390, 740, 208, 127));
+
         boxes.push_back(createTileBox(1390, 872, 208, 127));
+
         boxes.push_back(createTileBox(1390, 1004, 208, 127));
+
         boxes.push_back(createTileBox(1390, 1134, 208, 127));
+
         boxes.push_back(createTileBox(1390, 1264, 208, 127));
 
         sf::RectangleShape button({ 150,50 });
@@ -1125,7 +1204,7 @@ int GameController::showBoard() {
         total6 += tile->get_price();
     }
     total6 += currentPlayer->getBalance();
-    cout << "jeet gaya " << currentPlayer->get_name() << " bkc yayayayayayay " << "with the assets of : " << total6;
+    cout << "The player " << currentPlayer->get_name() << " won " << " with the assets of : " << total6;
 }
 
 int main()
