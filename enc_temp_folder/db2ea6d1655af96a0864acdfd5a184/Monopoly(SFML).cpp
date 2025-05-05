@@ -963,7 +963,7 @@ int GameController::showBoard() {
         white.setString("PRESS SPACE TO ROLL DICE");
         white2.setString("PRESS B TO BUY");
         white3.setString("PRESS N TO SKIP CHANCE");
-        
+
         red.setCharacterSize(30);
         blue.setCharacterSize(30);
         green.setCharacterSize(30);
