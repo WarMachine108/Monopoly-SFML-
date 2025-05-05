@@ -310,7 +310,7 @@ void Rent::apply_rule() {
     Tile* tile = GameController::board[player->get_index()];
     if (Asset* currentAsset = dynamic_cast<Asset*>(tile)) {
         int rent = currentAsset->get_rent();
-        player->change_balance(-rent); // Deduct rent
+        player->change_balance(rent); // Deduct rent
         // Pay rent to owner if applicable
     }
 }
@@ -474,7 +474,7 @@ bool Player::jail_status() {
 }
 
 void Player::change_balance(int sum) {
-    balance += sum/2;
+    balance += sum / 2;
 }
 
 void Player::edit_index(int i) {
@@ -542,6 +542,7 @@ vector<Rule*> Property::get_rules() {
     }
     else {
         vector<Rule*>Rules = { GameController::rules[0],GameController::rules[1] };
+        owned = true;
         return Rules;
     }
 }
@@ -588,6 +589,7 @@ vector<Rule*> Commodity::get_rules() {
         vector<Rule*>rules;
         rules.push_back(GameController::rules[0]);
         rules.push_back(GameController::rules[1]);
+        owned = true;
         return rules;
     }
 }
@@ -740,7 +742,6 @@ int GameController::show_diceroll(int r1, int r2) {
 
 void GameController::next_turn(int xroll1, int xroll2) {
     currentPlayer = players.at(playerIndx);
-
     while (currentPlayer->checkbankcorrupcy() || currentPlayer->jail_status()) {
         playerIndx += 1;
         currentPlayer = players.at(playerIndx);
@@ -755,14 +756,12 @@ void GameController::next_turn(int xroll1, int xroll2) {
 
 void GameController::Apply_rule(int ruleIndex) {
     currentRules[ruleIndex]->apply_rule();
-    currentRules = {};
 }
 
 void GameController::show_rules(vector<string> ruleTxts) {
     for (string rule : ruleTxts) {
         cout << "rule : " << rule << endl;
     }
-    Apply_rule(0);
 }
 
 bool GameController::end_game() {
@@ -964,7 +963,7 @@ int GameController::showBoard() {
         white.setString("PRESS SPACE TO ROLL DICE");
         white2.setString("PRESS B TO BUY");
         white3.setString("PRESS N TO SKIP CHANCE");
-        
+
         red.setCharacterSize(30);
         blue.setCharacterSize(30);
         green.setCharacterSize(30);
@@ -1106,32 +1105,32 @@ int GameController::showBoard() {
                 {
                     isRolling = true;
                     diceAnimationClock.restart();
-                    roll1 = rand() % 6 + 1;
-                    roll2 = rand() % 6 + 1;
+                    red_bal.setString("$" + to_string(players[3]->getBalance()));
+                    blue_bal.setString("$" + to_string(players[0]->getBalance()));
+                    green_bal.setString("$" + to_string(players[1]->getBalance()));
+                    yellow_bal.setString("$" + to_string(players[2]->getBalance()));
                 }
-
                 if (sf::Keyboard::isKeyPressed(Keyboard::Scan::B)) {
-                        Apply_rule(1);
+                    Apply_rule(1);
+                    //BGYR
+                    red_bal.setString("$" + to_string(players[3]->getBalance()));
+                    blue_bal.setString("$" + to_string(players[0]->getBalance()));
+                    green_bal.setString("$" + to_string(players[1]->getBalance()));
+                    yellow_bal.setString("$" + to_string(players[2]->getBalance()));
                 }
-                if (sf::Keyboard::isKeyPressed(Keyboard::Scan::N)) {
-                    Apply_rule(0);
-                }
-
             }
+        
             // Update game state
             if (isRolling) {
                 Time elapsed = diceAnimationClock.getElapsedTime();
                 if (elapsed >= seconds(1.5f)) {
                     isRolling = false;
-                    GameController::next_turn(roll1, roll2);
+                    roll1 = rand() % 6 + 1;
+                    roll2 = rand() % 6 + 1;
+                    next_turn(roll1, roll2);
                     playerSprites[playerIndx].setPosition(boxes[currentPlayer->get_index()].getPosition());
                     GameController::playerIndx = (GameController::playerIndx + 1) % ((GameController::players.size() - 1));
                 }
-                //BGYR
-                red_bal.setString("$" + to_string(players[3]->getBalance()));
-                blue_bal.setString("$" + to_string(players[0]->getBalance()));
-                green_bal.setString("$" + to_string(players[1]->getBalance()));
-                yellow_bal.setString("$" + to_string(players[2]->getBalance()));
                 for (Asset* tile : currentPlayer->Owned()) {
                     tile->get_name();
                 }
@@ -1216,7 +1215,7 @@ int GameController::showBoard() {
     for (Asset* tile : currentPlayer->Owned()) {
         total6 += tile->get_price();
     }
-    
+
     total6 += currentPlayer->getBalance();
     cout << "The player " << currentPlayer->get_name() << " won " << "with the assets of : " << total6;
 }
