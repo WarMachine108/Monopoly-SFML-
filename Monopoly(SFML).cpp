@@ -1,4 +1,4 @@
-#include <iostream>
+ï»¿#include <iostream>
 #include<string.h>
 #include<vector>
 #include<cstdlib>
@@ -14,15 +14,10 @@ using namespace sf;
 using namespace std;
 
 class Player;
-
 class Property;
-
 class Tile;
-
 class Asset;
-
 class Rule;
-
 class GameController {
 public:
     static vector<Rule*> currentRules;
@@ -193,7 +188,7 @@ class Asset : public Tile {
 public:
     virtual int get_price() = 0;
     virtual int get_rent() = 0;
-    virtual string get_name() = 0;
+    bool owned = false;
     ~Asset() {}
 };
 class eve : public Tile {
@@ -252,10 +247,10 @@ private:
     int price;
     int rent;
     string name;
-    bool owned;
     Buy buy;
     Player* owner = GameController::players[4];
 public:
+    bool owned = false;
     Property(string name, int price, int rent) {
         this->price = price;
         this->rent = rent;
@@ -266,7 +261,6 @@ public:
     int get_rent();
     void assignOwner(Player* player);
     int get_price();
-    string get_name();
     ~Property() {}
 };
 
@@ -274,10 +268,10 @@ class Commodity : public Asset {
 private:
     int price;
     string name;
-    bool owned = false;
     Player* owner = GameController::players[4];
     int rent;
 public:
+    bool owned = false;
     Commodity(string name, int price) {
         this->price = price;
         this->name = name;
@@ -286,7 +280,6 @@ public:
     int get_price();
     void assignOwner(Player* player);
     int get_rent();
-    string get_name();
     ~Commodity() {}
 };
 
@@ -310,7 +303,7 @@ void Rent::apply_rule() {
     Tile* tile = GameController::board[player->get_index()];
     if (Asset* currentAsset = dynamic_cast<Asset*>(tile)) {
         int rent = currentAsset->get_rent();
-        player->change_balance(rent); // Deduct rent
+        player->change_balance(-rent); // Deduct rent
         // Pay rent to owner if applicable
     }
 }
@@ -401,7 +394,7 @@ void chance3::apply_rule() {
 }
 
 string chance3::getTitle() {
-    return " “Drunk in charge” fine $20 ";
+    return " ï¿½Drunk in chargeï¿½ fine $20 ";
 }
 
 void chance4::apply_rule() {
@@ -560,10 +553,6 @@ int Property::get_price() {
     return price;
 }
 
-string Property::get_name() {
-    return name;
-}
-
 vector<Rule*> Commodity::get_rules() {
     Player* player = GameController::currentPlayer;
     if (owned) {
@@ -591,6 +580,7 @@ vector<Rule*> Commodity::get_rules() {
         rules.push_back(GameController::rules[1]);
         owned = true;
         return rules;
+        
     }
 }
 
@@ -605,10 +595,6 @@ void Commodity::assignOwner(Player* player) {
 
 int Commodity::get_rent() {
     return rent;
-}
-
-string Commodity::get_name() {
-    return name;
 }
 
 int GameController::playerIndx = 0;
@@ -642,85 +628,45 @@ vector<Player*> GameController::players = {
 
 vector <Tile*> GameController::board = {
     new TaxEvent("GO",150),
-
     new Property("Mediterranean Avenue", 60, -2),
-
     new CommunityChest("Community Chest"),
-
     new Property("Baltic Avenue", 60, -4),
-
-    new TaxEvent("Income Tax", -200),
-
+    new TaxEvent("Income Tax", -400),
     new Commodity("Reading Railroad", 200),
-
     new Property("Oriental Avenue", 100, -6),
-
     new Chance("Chance"),
-
     new Property("Vermont Avenue", 100, -6),
-
     new Property("Connecticut Avenue", 120, -8),
-
     new JailEvent("Jail (Just Visiting)"),
-
     new Property("St. Charles Place", 140, -10),
-
     new Commodity("Electric Company", 150),
-
     new Property("States Avenue", 140, -10),
-
     new Property("Virginia Avenue", 160, -12),
-
     new Commodity("Pennsylvania Railroad", 200),
-
     new Property("St. James Place", 180, -14),
-
     new CommunityChest("Community Chest"),
-
     new Property("Tennessee Avenue", 180, -14),
-
     new Property("New York Avenue", 200, -16),
-
     new TaxEvent("Free Parking",0),
-
     new Property("Kentucky Avenue",220, -18),
-
     new Chance("Chance"),
-
     new Property("Indiana Avenue", 220, -18),
-
     new Property("Illinois Avenue",240, -20),
-
     new Commodity("B&O Railroad", 200),
-
     new Property("Atlantic Avenue", 260, -22),
-
     new Property("Ventnor Avenue", 260, -22),
-
     new Commodity("Water Works", 150),
-
     new Property("Marvin Gardens", 280, -24),
-
     new JailEvent("Go to Jail"),
-
     new Property("Pacific Avenue", 300, -26),
-
     new Property("North Carolina Avenue", 300, -26),
-
     new CommunityChest("Community Chest"),
-
     new Property("Pennsylvania Avenue", 320, -28),
-
     new Commodity("Short Line Railroad", 200),
-
     new Chance("Chance"),
-
     new Property("Park Place", 350, -35),
-
     new TaxEvent("Luxury Tax", -100),
-
     new Property("Boardwalk", 400, -50)
-
 };
 
 vector<string> GameController::get_rule_txt() {
@@ -742,13 +688,18 @@ int GameController::show_diceroll(int r1, int r2) {
 
 void GameController::next_turn(int xroll1, int xroll2) {
     currentPlayer = players.at(playerIndx);
+
     while (currentPlayer->checkbankcorrupcy() || currentPlayer->jail_status()) {
         playerIndx += 1;
         currentPlayer = players.at(playerIndx);
     }
 
     int playerBoardIdx = show_diceroll(xroll1, xroll2);
+    if (currentPlayer->get_index() + playerBoardIdx >= GameController::board.size()) {
+        currentPlayer->change_balance(300);
+    }
     int newIndex = (currentPlayer->get_index() + playerBoardIdx) % GameController::board.size();
+
     currentPlayer->edit_index(newIndex);
     vector<string> strArr = get_rule_txt();
     show_rules(strArr);
@@ -756,12 +707,14 @@ void GameController::next_turn(int xroll1, int xroll2) {
 
 void GameController::Apply_rule(int ruleIndex) {
     currentRules[ruleIndex]->apply_rule();
+    currentRules = {};
 }
 
 void GameController::show_rules(vector<string> ruleTxts) {
     for (string rule : ruleTxts) {
         cout << "rule : " << rule << endl;
     }
+    Apply_rule(0);
 }
 
 bool GameController::end_game() {
@@ -842,83 +795,44 @@ int GameController::showBoard() {
 
         vector<RectangleShape> boxes;
         boxes.push_back(createTileBox(1390, 1395, 208, 208));
-
         boxes.push_back(createTileBox(1260, 1395, 127, 208));
-
         boxes.push_back(createTileBox(1130, 1395, 127, 208));
-
         boxes.push_back(createTileBox(995, 1395, 127, 208));
-
         boxes.push_back(createTileBox(865, 1395, 127, 208));
-
         boxes.push_back(createTileBox(735, 1395, 127, 208));
-
         boxes.push_back(createTileBox(605, 1395, 127, 208));
-
         boxes.push_back(createTileBox(475, 1395, 127, 208));
-
         boxes.push_back(createTileBox(345, 1395, 127, 208));
-
         boxes.push_back(createTileBox(215, 1395, 127, 208));
-
         boxes.push_back(createTileBox(0, 1395, 208, 208));
-
         boxes.push_back(createTileBox(0, 1264, 208, 127));
-
         boxes.push_back(createTileBox(0, 1134, 208, 127));
-
         boxes.push_back(createTileBox(0, 1004, 208, 127));
-
         boxes.push_back(createTileBox(0, 872, 208, 127));
-
         boxes.push_back(createTileBox(0, 740, 208, 127));
-
         boxes.push_back(createTileBox(0, 608, 208, 127));
-
         boxes.push_back(createTileBox(0, 476, 208, 127));
-
         boxes.push_back(createTileBox(0, 345, 208, 127));
-
         boxes.push_back(createTileBox(0, 213, 208, 127));
-
         boxes.push_back(createTileBox(0, 0, 208, 208));
-
         boxes.push_back(createTileBox(215, 0, 127, 208));
-
         boxes.push_back(createTileBox(345, 0, 127, 208));
-
         boxes.push_back(createTileBox(475, 0, 127, 208));
-
         boxes.push_back(createTileBox(605, 0, 127, 208));
-
         boxes.push_back(createTileBox(735, 0, 127, 208));
-
         boxes.push_back(createTileBox(865, 0, 127, 208));
-
         boxes.push_back(createTileBox(995, 0, 127, 208));
-
         boxes.push_back(createTileBox(1130, 0, 127, 208));
-
         boxes.push_back(createTileBox(1260, 0, 127, 208));
-
         boxes.push_back(createTileBox(1390, 0, 208, 208));
-
         boxes.push_back(createTileBox(1390, 213, 208, 127));
-
         boxes.push_back(createTileBox(1390, 345, 208, 127));
-
         boxes.push_back(createTileBox(1390, 476, 208, 127));
-
         boxes.push_back(createTileBox(1390, 608, 208, 127));
-
         boxes.push_back(createTileBox(1390, 740, 208, 127));
-
         boxes.push_back(createTileBox(1390, 872, 208, 127));
-
         boxes.push_back(createTileBox(1390, 1004, 208, 127));
-
         boxes.push_back(createTileBox(1390, 1134, 208, 127));
-
         boxes.push_back(createTileBox(1390, 1264, 208, 127));
 
         sf::RectangleShape button({ 150,50 });
@@ -932,29 +846,17 @@ int GameController::showBoard() {
         }
 
         Text buttonText(uiFont);
-
         Text red(uiFont);
-
         Text blue(uiFont);
-
         Text green(uiFont);
-
         Text yellow(uiFont);
-
         Text white(uiFont);
-
         Text white2(uiFont);
-
         Text white3(uiFont);
-
         Text red_bal(uiFont);
-
         Text blue_bal(uiFont);
-
         Text green_bal(uiFont);
-
         Text yellow_bal(uiFont);
-
 
         red.setString("PLAYER RED");
         blue.setString("PLAYER BLUE");
@@ -1105,35 +1007,42 @@ int GameController::showBoard() {
                 {
                     isRolling = true;
                     diceAnimationClock.restart();
-                    red_bal.setString("$" + to_string(players[3]->getBalance()));
-                    blue_bal.setString("$" + to_string(players[0]->getBalance()));
-                    green_bal.setString("$" + to_string(players[1]->getBalance()));
-                    yellow_bal.setString("$" + to_string(players[2]->getBalance()));
+                    roll1 = rand() % 6 + 1;
+                    roll2 = rand() % 6 + 1;
                 }
+
                 if (sf::Keyboard::isKeyPressed(Keyboard::Scan::B)) {
+                    dynamic_cast<Asset*>(GameController::board[currentPlayer->get_index()])->owned = true;
                     Apply_rule(1);
-                    //BGYR
                     red_bal.setString("$" + to_string(players[3]->getBalance()));
                     blue_bal.setString("$" + to_string(players[0]->getBalance()));
                     green_bal.setString("$" + to_string(players[1]->getBalance()));
                     yellow_bal.setString("$" + to_string(players[2]->getBalance()));
                 }
+                if (sf::Keyboard::isKeyPressed(Keyboard::Scan::N)) {
+                    Apply_rule(0);
+                    red_bal.setString("$" + to_string(players[3]->getBalance()));
+                    blue_bal.setString("$" + to_string(players[0]->getBalance()));
+                    green_bal.setString("$" + to_string(players[1]->getBalance()));
+                    yellow_bal.setString("$" + to_string(players[2]->getBalance()));
+                }
+
             }
-        
             // Update game state
             if (isRolling) {
                 Time elapsed = diceAnimationClock.getElapsedTime();
                 if (elapsed >= seconds(1.5f)) {
                     isRolling = false;
-                    roll1 = rand() % 6 + 1;
-                    roll2 = rand() % 6 + 1;
-                    next_turn(roll1, roll2);
+                    GameController::next_turn(roll1, roll2);
                     playerSprites[playerIndx].setPosition(boxes[currentPlayer->get_index()].getPosition());
+
                     GameController::playerIndx = (GameController::playerIndx + 1) % ((GameController::players.size() - 1));
                 }
-                for (Asset* tile : currentPlayer->Owned()) {
-                    tile->get_name();
-                }
+                //BGYR
+                red_bal.setString("$" + to_string(players[3]->getBalance()));
+                blue_bal.setString("$" + to_string(players[0]->getBalance()));
+                green_bal.setString("$" + to_string(players[1]->getBalance()));
+                yellow_bal.setString("$" + to_string(players[2]->getBalance()));
             }
 
             // Animation update
@@ -1215,9 +1124,8 @@ int GameController::showBoard() {
     for (Asset* tile : currentPlayer->Owned()) {
         total6 += tile->get_price();
     }
-
     total6 += currentPlayer->getBalance();
-    cout << "The player " << currentPlayer->get_name() << " won " << "with the assets of : " << total6;
+    cout << "jeet gaya " << currentPlayer->get_name() << " bkc yayayayayayay " << "with the assets of : " << total6;
 }
 
 int main()
