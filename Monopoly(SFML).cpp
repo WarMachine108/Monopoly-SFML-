@@ -28,7 +28,7 @@ public:
     static vector <Tile*> board;
     static vector<string> get_rule_txt();
     static int show_diceroll(int r1, int r2);
-    static void next_turn(int xroll1,int xroll2);
+    static void next_turn(int xroll1, int xroll2);
     static void Apply_rule(int ruleIndex);
     static void show_rules(vector<string> ruleTxts);
     static bool end_game();
@@ -190,7 +190,7 @@ public:
     virtual int get_rent() = 0;
     ~Asset() {}
 };
-class eve: public Tile {
+class eve : public Tile {
 };
 class CommunityChest :public eve {
 private:
@@ -415,6 +415,7 @@ string chance5::getTitle() {
 }
 
 void JailRule::apply_rule() {
+    GameController::currentPlayer->jail_update();
 }
 
 string JailRule::getTitle() {
@@ -465,7 +466,7 @@ bool Player::jail_status() {
 }
 
 void Player::change_balance(int sum) {
-    balance += (sum / 2);
+    balance += sum/2;
 }
 
 void Player::edit_index(int i) {
@@ -626,7 +627,7 @@ vector <Tile*> GameController::board = {
     new Property("Mediterranean Avenue", 60, -2),
     new CommunityChest("Community Chest"),
     new Property("Baltic Avenue", 60, -4),
-    new TaxEvent("Income Tax", -100),
+    new TaxEvent("Income Tax", -200),
     new Commodity("Reading Railroad", 200),
     new Property("Oriental Avenue", 100, -6),
     new Chance("Chance"),
@@ -698,6 +699,7 @@ void GameController::next_turn(int xroll1, int xroll2) {
 
 void GameController::Apply_rule(int ruleIndex) {
     currentRules[ruleIndex]->apply_rule();
+    currentRules = {};
 }
 
 void GameController::show_rules(vector<string> ruleTxts) {
@@ -725,341 +727,361 @@ RectangleShape createTileBox(float x, float y, float w, float h, Color color = C
 int GameController::showBoard() {
     cout << "board has been initialised" << endl;
 
-    // Initialize game state variables
-    bool isRolling = false;
-    int roll1 = 1, roll2 = 1;
-    int total = 0; 
-    Clock diceAnimationClock;
-    const Time frameDuration = milliseconds(100);
+    while (!end_game()) {
+        // Initialize game state variables
+        bool isRolling = false;
+        int roll1 = 1, roll2 = 1;
+        int total = 0;
+        Clock diceAnimationClock;
+        const Time frameDuration = milliseconds(100);
 
-    RenderWindow window(VideoMode({ 2560, 1600 }), "Monopoly");
-    window.setFramerateLimit(60);
-    ContextSettings settings;
-    settings.antiAliasingLevel = 8;
+        RenderWindow window(VideoMode({ 2560, 1600 }), "Monopoly");
+        window.setFramerateLimit(165);
+        ContextSettings settings;
+        settings.antiAliasingLevel = 16;
 
-    // Load textures
-    Texture boardTexture, diceTextures[6], playerTextures[4], playerUiTex[4], uirect, playerRect[4];
+        // Load textures
+        Texture boardTexture, diceTextures[6], playerTextures[4], playerUiTex[4], uirect, playerRect[4];
 
-    if (!uirect.loadFromFile("Assets/uirect.png")) {
-        cout << "Failed to load board texture!" << endl;
-        return -1;
-    }
-
-    if (!boardTexture.loadFromFile("Assets/Board.jpg")) {
-        cout << "Failed to load board texture!" << endl;
-        return -1;
-    }
-
-    for (int i = 0; i < 6; i++) {
-        if (!diceTextures[i].loadFromFile("Assets/dice_" + to_string(i + 1) + ".png")) {
-            cout << "Failed to load dice texture " << i + 1 << endl;
+        if (!uirect.loadFromFile("Assets/uirect.png")) {
+            cout << "Failed to load board texture!" << endl;
             return -1;
         }
-        diceTextures[i].setSmooth(true);
-    }
 
-    for (int i = 0; i < 4; i++) {
-        if (!playerTextures[i].loadFromFile("Assets/p" + to_string(i + 1) + ".png")) {
-            cout << "Failed to load player texture " << i + 1 << endl;
+        if (!boardTexture.loadFromFile("Assets/Board.jpg")) {
+            cout << "Failed to load board texture!" << endl;
             return -1;
         }
-        playerTextures[i].setSmooth(true);
-    }
 
-    for (int i = 0; i < 4; i++) {
-        if (!playerUiTex[i].loadFromFile("Assets/pfp_" + to_string(i + 1) + ".jpg")) {
-            cout << "Failed to load player texture " << i + 1 << endl;
+        for (int i = 0; i < 6; i++) {
+            if (!diceTextures[i].loadFromFile("Assets/dice_" + to_string(i + 1) + ".png")) {
+                cout << "Failed to load dice texture " << i + 1 << endl;
+                return -1;
+            }
+            diceTextures[i].setSmooth(true);
+        }
+
+        for (int i = 0; i < 4; i++) {
+            if (!playerTextures[i].loadFromFile("Assets/p" + to_string(i + 1) + ".png")) {
+                cout << "Failed to load player texture " << i + 1 << endl;
+                return -1;
+            }
+            playerTextures[i].setSmooth(true);
+        }
+
+        for (int i = 0; i < 4; i++) {
+            if (!playerUiTex[i].loadFromFile("Assets/pfp_" + to_string(i + 1) + ".jpg")) {
+                cout << "Failed to load player texture " << i + 1 << endl;
+                return -1;
+            }
+            playerUiTex[i].setSmooth(true);
+        }
+
+        for (int i = 0; i < 4; i++) {
+            if (!playerRect[i].loadFromFile("Assets/rect_" + to_string(i + 1) + ".jpg")) {
+                cout << "Failed to load player texture " << i + 1 << endl;
+                return -1;
+            }
+            playerRect[i].setSmooth(true);
+        }
+
+        vector<RectangleShape> boxes;
+        boxes.push_back(createTileBox(1390, 1395, 208, 208));
+        boxes.push_back(createTileBox(1260, 1395, 127, 208));
+        boxes.push_back(createTileBox(1130, 1395, 127, 208));
+        boxes.push_back(createTileBox(995, 1395, 127, 208));
+        boxes.push_back(createTileBox(865, 1395, 127, 208));
+        boxes.push_back(createTileBox(735, 1395, 127, 208));
+        boxes.push_back(createTileBox(605, 1395, 127, 208));
+        boxes.push_back(createTileBox(475, 1395, 127, 208));
+        boxes.push_back(createTileBox(345, 1395, 127, 208));
+        boxes.push_back(createTileBox(215, 1395, 127, 208));
+        boxes.push_back(createTileBox(0, 1395, 208, 208));
+        boxes.push_back(createTileBox(0, 1264, 208, 127));
+        boxes.push_back(createTileBox(0, 1134, 208, 127));
+        boxes.push_back(createTileBox(0, 1004, 208, 127));
+        boxes.push_back(createTileBox(0, 872, 208, 127));
+        boxes.push_back(createTileBox(0, 740, 208, 127));
+        boxes.push_back(createTileBox(0, 608, 208, 127));
+        boxes.push_back(createTileBox(0, 476, 208, 127));
+        boxes.push_back(createTileBox(0, 345, 208, 127));
+        boxes.push_back(createTileBox(0, 213, 208, 127));
+        boxes.push_back(createTileBox(0, 0, 208, 208));
+        boxes.push_back(createTileBox(215, 0, 127, 208));
+        boxes.push_back(createTileBox(345, 0, 127, 208));
+        boxes.push_back(createTileBox(475, 0, 127, 208));
+        boxes.push_back(createTileBox(605, 0, 127, 208));
+        boxes.push_back(createTileBox(735, 0, 127, 208));
+        boxes.push_back(createTileBox(865, 0, 127, 208));
+        boxes.push_back(createTileBox(995, 0, 127, 208));
+        boxes.push_back(createTileBox(1130, 0, 127, 208));
+        boxes.push_back(createTileBox(1260, 0, 127, 208));
+        boxes.push_back(createTileBox(1390, 0, 208, 208));
+        boxes.push_back(createTileBox(1390, 213, 208, 127));
+        boxes.push_back(createTileBox(1390, 345, 208, 127));
+        boxes.push_back(createTileBox(1390, 476, 208, 127));
+        boxes.push_back(createTileBox(1390, 608, 208, 127));
+        boxes.push_back(createTileBox(1390, 740, 208, 127));
+        boxes.push_back(createTileBox(1390, 872, 208, 127));
+        boxes.push_back(createTileBox(1390, 1004, 208, 127));
+        boxes.push_back(createTileBox(1390, 1134, 208, 127));
+        boxes.push_back(createTileBox(1390, 1264, 208, 127));
+
+        sf::RectangleShape button({ 150,50 });
+        button.setPosition({ 2150, 750 });
+        button.setFillColor(sf::Color::Blue);
+
+        Font uiFont;
+        if (!uiFont.openFromFile("Assets/agencyfb.ttf")) {
+            cout << "Failed to load UI font!" << endl;
             return -1;
         }
-        playerUiTex[i].setSmooth(true);
-    }
 
-    for (int i = 0; i < 4; i++) {
-        if (!playerRect[i].loadFromFile("Assets/rect_" + to_string(i + 1) + ".jpg")) {
-            cout << "Failed to load player texture " << i + 1 << endl;
-            return -1;
-        }
-        playerRect[i].setSmooth(true);
-    }
+        Text buttonText(uiFont);
+        Text red(uiFont);
+        Text blue(uiFont);
+        Text green(uiFont);
+        Text yellow(uiFont);
+        Text white(uiFont);
+        Text white2(uiFont);
+        Text white3(uiFont);
+        Text red_bal(uiFont);
+        Text blue_bal(uiFont);
+        Text green_bal(uiFont);
+        Text yellow_bal(uiFont);
 
-    vector<RectangleShape> boxes;
-    boxes.push_back(createTileBox(1390, 1395, 208, 208));
-    boxes.push_back(createTileBox(1260, 1395, 127, 208));
-    boxes.push_back(createTileBox(1130, 1395, 127, 208));
-    boxes.push_back(createTileBox(995, 1395, 127, 208));
-    boxes.push_back(createTileBox(865, 1395, 127, 208));
-    boxes.push_back(createTileBox(735, 1395, 127, 208));
-    boxes.push_back(createTileBox(605, 1395, 127, 208));
-    boxes.push_back(createTileBox(475, 1395, 127, 208));
-    boxes.push_back(createTileBox(345, 1395, 127, 208));
-    boxes.push_back(createTileBox(215, 1395, 127, 208));
-    boxes.push_back(createTileBox(0, 1395, 208, 208));
-    boxes.push_back(createTileBox(0, 1264, 208, 127));
-    boxes.push_back(createTileBox(0, 1134, 208, 127));
-    boxes.push_back(createTileBox(0, 1004, 208, 127));
-    boxes.push_back(createTileBox(0, 872, 208, 127));
-    boxes.push_back(createTileBox(0, 740, 208, 127));
-    boxes.push_back(createTileBox(0, 608, 208, 127));
-    boxes.push_back(createTileBox(0, 476, 208, 127));
-    boxes.push_back(createTileBox(0, 345, 208, 127));
-    boxes.push_back(createTileBox(0, 213, 208, 127));
-    boxes.push_back(createTileBox(0, 0, 208, 208));
-    boxes.push_back(createTileBox(215, 0, 127, 208));
-    boxes.push_back(createTileBox(345, 0, 127, 208));
-    boxes.push_back(createTileBox(475, 0, 127, 208));
-    boxes.push_back(createTileBox(605, 0, 127, 208));
-    boxes.push_back(createTileBox(735, 0, 127, 208));
-    boxes.push_back(createTileBox(865, 0, 127, 208));
-    boxes.push_back(createTileBox(995, 0, 127, 208));
-    boxes.push_back(createTileBox(1130, 0, 127, 208));
-    boxes.push_back(createTileBox(1260, 0, 127, 208));
-    boxes.push_back(createTileBox(1390, 0, 208, 208));
-    boxes.push_back(createTileBox(1390, 213, 208, 127));
-    boxes.push_back(createTileBox(1390, 345, 208, 127));
-    boxes.push_back(createTileBox(1390, 476, 208, 127));
-    boxes.push_back(createTileBox(1390, 608, 208, 127));
-    boxes.push_back(createTileBox(1390, 740, 208, 127));
-    boxes.push_back(createTileBox(1390, 872, 208, 127));
-    boxes.push_back(createTileBox(1390, 1004, 208, 127));
-    boxes.push_back(createTileBox(1390, 1134, 208, 127));
-    boxes.push_back(createTileBox(1390, 1264, 208, 127));
+        red.setString("PLAYER RED");
+        blue.setString("PLAYER BLUE");
+        green.setString("PLAYER GREEN");
+        yellow.setString("PLAYER YELLOW");
+        white.setString("PRESS SPACE TO ROLL DICE");
+        white2.setString("PRESS B TO BUY");
+        white3.setString("PRESS N TO SKIP CHANCE");
 
-    sf::RectangleShape button(sf::Vector2f(150, 50));
-    button.setPosition({ 2150, 750 });
-    button.setFillColor(sf::Color::Transparent);
+        red.setCharacterSize(30);
+        blue.setCharacterSize(30);
+        green.setCharacterSize(30);
+        yellow.setCharacterSize(30);
+        white.setCharacterSize(40);
+        white2.setCharacterSize(40);
+        white3.setCharacterSize(40);
+        red_bal.setCharacterSize(30);
+        blue_bal.setCharacterSize(30);
+        green_bal.setCharacterSize(30);
+        yellow_bal.setCharacterSize(30);
 
-    Font uiFont;
-    if (!uiFont.openFromFile("Assets/agencyfb.ttf")) {
-        cout << "Failed to load UI font!" << endl;
-        return -1;
-    }
+        red.setFillColor(Color::Color(255, 150, 155, 255));
+        blue.setFillColor(Color::Color(170, 211, 210, 255));
+        green.setFillColor(Color::Color(186, 222, 160, 255));
+        yellow.setFillColor(Color::Color(249, 205, 136, 255));
+        white.setFillColor(Color::White);
+        white2.setFillColor(Color::White);
+        white3.setFillColor(Color::White);
+        red_bal.setFillColor(Color::White);
+        blue_bal.setFillColor(Color::White);
+        green_bal.setFillColor(Color::White);
+        yellow_bal.setFillColor(Color::White);
 
-    Text buttonText(uiFont);
+        red.setStyle(Text::Bold);
+        blue.setStyle(Text::Bold);
+        green.setStyle(Text::Bold);
+        yellow.setStyle(Text::Bold);
+        white.setStyle(Text::Bold);
+        white2.setStyle(Text::Bold);
+        white3.setStyle(Text::Bold);
+        red_bal.setStyle(Text::Bold);
+        blue_bal.setStyle(Text::Bold);
+        green_bal.setStyle(Text::Bold);
+        yellow_bal.setStyle(Text::Bold);
 
-    Text red(uiFont);
-    Text blue(uiFont);
-    Text green(uiFont);
-    Text yellow(uiFont);
-    Text white(uiFont);
-    Text red_bal(uiFont);
-    Text blue_bal(uiFont);
-    Text green_bal(uiFont);
-    Text yellow_bal(uiFont);
+        blue.setPosition({ 1740, 370 });
+        green.setPosition({ 1740, 470 });
+        yellow.setPosition({ 1740, 570 });
+        red.setPosition({ 1740, 670 });
+        white.setPosition({ 2150,150 });
+        white2.setPosition({ 1740,800 });
+        white3.setPosition({ 1740,900 });
+        blue_bal.setPosition({ 2420, 370 });
+        green_bal.setPosition({ 2420, 470 });
+        yellow_bal.setPosition({ 2420, 570 });
+        red_bal.setPosition({ 2420, 670 });
+        buttonText.setPosition({ 2050, 700 });
 
-    red.setString("PLAYER RED");
-    blue.setString("PLAYER BLUE");
-    green.setString("PLAYER GREEN");
-    yellow.setString("PLAYER YELLOW");
-    white.setString("PRESS SPACE TO ROLL DICE");
+        // Initialize sprites
+        Sprite boardSprite(boardTexture);
+        Sprite diceSprites[2] = { Sprite(diceTextures[0]), Sprite(diceTextures[0]) };
+        Sprite playerSprites[4] = { Sprite(playerTextures[0]), Sprite(playerTextures[1]) , Sprite(playerTextures[2]) , Sprite(playerTextures[3]) };
+        Sprite pfpSprites[4] = { Sprite(playerUiTex[0]), Sprite(playerUiTex[1]) , Sprite(playerUiTex[2]) , Sprite(playerUiTex[3]) };
+        Sprite uibox(uirect);
+        Sprite playerRects[4] = { Sprite(playerRect[0]), Sprite(playerRect[1]) , Sprite(playerRect[2]) , Sprite(playerRect[3]) };
 
-    red.setCharacterSize(30);
-    blue.setCharacterSize(30);
-    green.setCharacterSize(30);
-    yellow.setCharacterSize(30);
-    white.setCharacterSize(40);
-    red_bal.setCharacterSize(30);
-    blue_bal.setCharacterSize(30);
-    green_bal.setCharacterSize(30);
-    yellow_bal.setCharacterSize(30);
+        diceSprites[0].setPosition({ 1620, 50 });
+        diceSprites[1].setPosition({ 1850, 50 });
+        diceSprites[0].scale({ 0.5f, 0.5f });
+        diceSprites[1].scale({ 0.5f, 0.5f });
 
-    red.setFillColor(Color::Color(255, 150, 155, 255));
-    blue.setFillColor(Color::Color(170, 211, 210, 255));
-    green.setFillColor(Color::Color(186, 222, 160, 255));
-    yellow.setFillColor(Color::Color(249, 205, 136, 255));
-    white.setFillColor(Color::White);
-    red_bal.setFillColor(Color::White);
-    blue_bal.setFillColor(Color::White);
-    green_bal.setFillColor(Color::White);
-    yellow_bal.setFillColor(Color::White);
+        uibox.setPosition({ 1625, 325 });
+        uibox.scale({ 1.14f, 0.95f });
 
-    red.setStyle(Text::Bold);
-    blue.setStyle(Text::Bold);
-    green.setStyle(Text::Bold);
-    yellow.setStyle(Text::Bold);
-    white.setStyle(Text::Bold);
-    red_bal.setStyle(Text::Bold);
-    blue_bal.setStyle(Text::Bold);
-    green_bal.setStyle(Text::Bold);
-    yellow_bal.setStyle(Text::Bold);
+        playerRects[0].setPosition({ 1630, 350 });
+        playerRects[0].scale({ 0.2f, 0.2f });
 
-    blue.setPosition({ 1740, 370 });
-    green.setPosition({ 1740, 470 });
-    yellow.setPosition({ 1740, 570 });
-    red.setPosition({ 1740, 670 });
-    white.setPosition({ 2150,150 });
-    blue_bal.setPosition({ 2420, 370 });
-    green_bal.setPosition({ 2420, 470 });
-    yellow_bal.setPosition({ 2420, 570 });
-    red_bal.setPosition({ 2420, 670 });
-    buttonText.setPosition({ 2050, 700 });
+        playerRects[1].setPosition({ 1630, 450 });
+        playerRects[1].scale({ 0.2f, 0.2f });
 
-    // Initialize sprites
-    Sprite boardSprite(boardTexture);
-    Sprite diceSprites[2] = { Sprite(diceTextures[0]), Sprite(diceTextures[0]) };
-    Sprite playerSprites[4] = { Sprite(playerTextures[0]), Sprite(playerTextures[1]) , Sprite(playerTextures[2]) , Sprite(playerTextures[3]) };
-    Sprite pfpSprites[4] = { Sprite(playerUiTex[0]), Sprite(playerUiTex[1]) , Sprite(playerUiTex[2]) , Sprite(playerUiTex[3]) };
-    Sprite uibox(uirect);
-    Sprite playerRects[4] = { Sprite(playerRect[0]), Sprite(playerRect[1]) , Sprite(playerRect[2]) , Sprite(playerRect[3]) };
+        playerRects[2].setPosition({ 1630, 550 });
+        playerRects[2].scale({ 0.2f, 0.2f });
 
-    diceSprites[0].setPosition({ 1620, 50 });
-    diceSprites[1].setPosition({ 1850, 50 });
-    diceSprites[0].scale({ 0.5f, 0.5f });
-    diceSprites[1].scale({ 0.5f, 0.5f });
+        playerRects[3].setPosition({ 1630, 650 });
+        playerRects[3].scale({ 0.2f, 0.2f });
 
-    uibox.setPosition({ 1625, 325 });
-    uibox.scale({ 1.14f, 0.95f });
+        playerSprites[0].scale({ 0.18f, 0.18f });
+        playerSprites[0].setPosition({ 1475,1550 });
 
-    playerRects[0].setPosition({ 1630, 350 });
-    playerRects[0].scale({ 0.2f, 0.2f });
+        playerSprites[1].scale({ 0.18f, 0.18f });
+        playerSprites[1].setPosition({ 1465,1480 });
 
-    playerRects[1].setPosition({ 1630, 450 });
-    playerRects[1].scale({ 0.2f, 0.2f });
+        playerSprites[2].scale({ 0.18f, 0.18f });
+        playerSprites[2].setPosition({ 1545,1480 });
 
-    playerRects[2].setPosition({ 1630, 550 });
-    playerRects[2].scale({ 0.2f, 0.2f });
+        playerSprites[3].scale({ 0.18f, 0.18f });
+        playerSprites[3].setPosition({ 1545,1550 });
 
-    playerRects[3].setPosition({ 1630, 650 });
-    playerRects[3].scale({ 0.2f, 0.2f });
+        pfpSprites[0].scale({ 0.2f, 0.2f });
+        pfpSprites[0].setPosition({ 1650, 350 });
 
-    playerSprites[0].scale({ 0.18f, 0.18f });
-    playerSprites[0].setPosition({ 1475,1550 });
+        pfpSprites[1].scale({ 0.2f, 0.2f });
+        pfpSprites[1].setPosition({ 1650, 450 });
 
-    playerSprites[1].scale({ 0.18f, 0.18f });
-    playerSprites[1].setPosition({ 1465,1480 });
+        pfpSprites[2].scale({ 0.2f, 0.2f });
+        pfpSprites[2].setPosition({ 1650, 550 });
 
-    playerSprites[2].scale({ 0.18f, 0.18f });
-    playerSprites[2].setPosition({ 1545,1480 });
+        pfpSprites[3].scale({ 0.2f, 0.2f });
+        pfpSprites[3].setPosition({ 1650, 650 });
 
-    playerSprites[3].scale({ 0.18f, 0.18f });
-    playerSprites[3].setPosition({ 1545,1550 });
+        // Game initialization
+        FloatRect bo[4] = { playerSprites[0].getGlobalBounds(), playerSprites[1].getGlobalBounds() , playerSprites[2].getGlobalBounds() , playerSprites[3].getGlobalBounds() };
+        RectangleShape bbox;
+        bbox.setPosition({ 1550,1550 });
+        bbox.setSize({ 30,45 });
+        bbox.setFillColor(sf::Color::Transparent); // No fill
+        bbox.setOutlineColor(sf::Color::Red);      // Red outline
+        bbox.setOutlineThickness(2.f);
 
-    pfpSprites[0].scale({ 0.2f, 0.2f });
-    pfpSprites[0].setPosition({ 1650, 350 });
+        RectangleShape bbox1;
+        bbox1.setPosition({ 1550,1480 });
+        bbox1.setSize({ 30,45 });
+        bbox1.setFillColor(sf::Color::Transparent); // No fill
+        bbox1.setOutlineColor(sf::Color::Red);      // Red outline
+        bbox1.setOutlineThickness(2.f);
 
-    pfpSprites[1].scale({ 0.2f, 0.2f });
-    pfpSprites[1].setPosition({ 1650, 450 });
+        RectangleShape bbox2;
+        bbox2.setPosition({ 1470,1480 });
+        bbox2.setSize({ 30,45 });
+        bbox2.setFillColor(sf::Color::Transparent); // No fill
+        bbox2.setOutlineColor(sf::Color::Red);      // Red outline
+        bbox2.setOutlineThickness(2.f);
 
-    pfpSprites[2].scale({ 0.2f, 0.2f });
-    pfpSprites[2].setPosition({ 1650, 550 });
+        RectangleShape bbox3;
+        bbox3.setPosition({ 1480,1550 });
+        bbox3.setSize({ 30,45 });
+        bbox3.setFillColor(sf::Color::Transparent); // No fill
+        bbox3.setOutlineColor(sf::Color::Red);      // Red outline
+        bbox3.setOutlineThickness(2.f);
 
-    pfpSprites[3].scale({ 0.2f, 0.2f });
-    pfpSprites[3].setPosition({ 1650, 650 });
+        // Main game loop
+        while (window.isOpen()) {
+            while (const optional event = window.pollEvent()) {
+                if (event->is<sf::Event::Closed>()) {
+                    window.close();
+                }
+                if (sf::Keyboard::isKeyPressed(Keyboard::Scan::Space))
+                {
+                    isRolling = true;
+                    diceAnimationClock.restart();
+                    roll1 = rand() % 6 + 1;
+                    roll2 = rand() % 6 + 1;
+                }
 
-    // Game initialization
-    FloatRect bo[4] = { playerSprites[0].getGlobalBounds(), playerSprites[1].getGlobalBounds() , playerSprites[2].getGlobalBounds() , playerSprites[3].getGlobalBounds() };
-    RectangleShape bbox;
-    bbox.setPosition({ 1550,1550 });
-    bbox.setSize({ 30,45 });
-    bbox.setFillColor(sf::Color::Transparent); // No fill
-    bbox.setOutlineColor(sf::Color::Red);      // Red outline
-    bbox.setOutlineThickness(2.f);
+                if (sf::Keyboard::isKeyPressed(Keyboard::Scan::B)) {
+                        Apply_rule(1);
+                }
+                if (sf::Keyboard::isKeyPressed(Keyboard::Scan::N)) {
+                    Apply_rule(0);
+                }
 
-    RectangleShape bbox1;
-    bbox1.setPosition({ 1550,1480 });
-    bbox1.setSize({ 30,45 });
-    bbox1.setFillColor(sf::Color::Transparent); // No fill
-    bbox1.setOutlineColor(sf::Color::Red);      // Red outline
-    bbox1.setOutlineThickness(2.f);
-
-    RectangleShape bbox2;
-    bbox2.setPosition({ 1470,1480 });
-    bbox2.setSize({ 30,45 });
-    bbox2.setFillColor(sf::Color::Transparent); // No fill
-    bbox2.setOutlineColor(sf::Color::Red);      // Red outline
-    bbox2.setOutlineThickness(2.f);
-
-    RectangleShape bbox3;
-    bbox3.setPosition({ 1480,1550 });
-    bbox3.setSize({ 30,45 });
-    bbox3.setFillColor(sf::Color::Transparent); // No fill
-    bbox3.setOutlineColor(sf::Color::Red);      // Red outline
-    bbox3.setOutlineThickness(2.f);
-
-    // Main game loop
-    while (window.isOpen()) {
-        while (const optional event = window.pollEvent()) {
-            if (event->is<sf::Event::Closed>()) {
-                window.close();
             }
-            if (sf::Keyboard::isKeyPressed(Keyboard::Scan::Space))
-            {
-                isRolling = true;
-                diceAnimationClock.restart();
-                roll1 = rand() % 6 + 1;
-                roll2 = rand() % 6 + 1;
+            // Update game state
+            if (isRolling) {
+                Time elapsed = diceAnimationClock.getElapsedTime();
+                if (elapsed >= seconds(1.5f)) {
+                    isRolling = false;
+                    GameController::next_turn(roll1, roll2);
+                    playerSprites[playerIndx].setPosition(boxes[currentPlayer->get_index()].getPosition());
+
+                    GameController::playerIndx = (GameController::playerIndx + 1) % ((GameController::players.size() - 1));
+                }
+                //BGYR
+                red_bal.setString("$" + to_string(players[3]->getBalance()));
+                blue_bal.setString("$" + to_string(players[0]->getBalance()));
+                green_bal.setString("$" + to_string(players[1]->getBalance()));
+                yellow_bal.setString("$" + to_string(players[2]->getBalance()));
             }
-        }
 
-        // Update game state
-        if (isRolling) {
-            Time elapsed = diceAnimationClock.getElapsedTime();
-            if (elapsed >= seconds(1.5f)) {
-                isRolling = false;
-                GameController::next_turn(roll1, roll2);
-                playerSprites[playerIndx].setPosition(boxes[currentPlayer->get_index()].getPosition());
-                GameController::playerIndx = (GameController::playerIndx + 1) % ((GameController::players.size() - 1));
+            // Animation update
+            if (isRolling) {
+                int frame = (diceAnimationClock.getElapsedTime().asMilliseconds() / 100) % 6;
+                diceSprites[0].setTexture(diceTextures[frame]);
+                diceSprites[1].setTexture(diceTextures[(frame + 3) % 6]);
             }
-            //BGYR
-            red_bal.setString("$" + to_string(players[3]->getBalance()));
-            blue_bal.setString("$" + to_string(players[0]->getBalance()));
-            green_bal.setString("$" + to_string(players[1]->getBalance()));
-            yellow_bal.setString("$" + to_string(players[2]->getBalance()));
-        }
 
-        // Animation update
-        if (isRolling) {
-            int frame = (diceAnimationClock.getElapsedTime().asMilliseconds() / 100) % 6;
-            diceSprites[0].setTexture(diceTextures[frame]);
-            diceSprites[1].setTexture(diceTextures[(frame + 3) % 6]);
-        }
-
-        else {
-            diceSprites[0].setTexture(diceTextures[roll1 - 1]);
-            diceSprites[1].setTexture(diceTextures[roll2 - 1]);
-        }
-
-        if (sf::Mouse::isButtonPressed(Mouse::Button::Left)) {
-            sf::Vector2i mousePos = sf::Mouse::getPosition(window);
-            if (button.getGlobalBounds().contains(static_cast<sf::Vector2f>(mousePos))) {
-                std::cout << "Button clicked!" << std::endl;
+            else {
+                diceSprites[0].setTexture(diceTextures[roll1 - 1]);
+                diceSprites[1].setTexture(diceTextures[roll2 - 1]);
             }
+
+            window.clear(Color::Color(23, 14, 28, 255));
+            window.draw(boardSprite);
+            for (const auto& box : boxes)
+                window.draw(box);
+
+            // Draw game elements
+            window.draw(diceSprites[0]);
+            window.draw(diceSprites[1]);
+            window.draw(playerSprites[0]);
+            window.draw(playerSprites[1]);
+            window.draw(playerSprites[2]);
+            window.draw(playerSprites[3]);
+            window.draw(uibox);
+            window.draw(pfpSprites[0]);
+            window.draw(pfpSprites[1]);
+            window.draw(pfpSprites[2]);
+            window.draw(pfpSprites[3]);
+            window.draw(bbox);
+            window.draw(bbox1);
+            window.draw(bbox2);
+            window.draw(bbox3);
+            window.draw(red);
+            window.draw(blue);
+            window.draw(green);
+            window.draw(yellow);
+            window.draw(white);
+            window.draw(white2);
+            window.draw(white3);
+            window.draw(red_bal);
+            window.draw(blue_bal);
+            window.draw(green_bal);
+            window.draw(yellow_bal);
+            window.draw(playerRects[playerIndx]);
+            window.display();
         }
-
-        window.clear(Color::Color(23, 14, 28, 255));
-        window.draw(boardSprite);
-        for (const auto& box : boxes)
-            window.draw(box);
-
-        // Draw game elements
-        window.draw(diceSprites[0]);
-        window.draw(diceSprites[1]);
-        window.draw(playerSprites[0]);
-        window.draw(playerSprites[1]);
-        window.draw(playerSprites[2]);
-        window.draw(playerSprites[3]);
-        window.draw(uibox);
-        window.draw(pfpSprites[0]);
-        window.draw(pfpSprites[1]);
-        window.draw(pfpSprites[2]);
-        window.draw(pfpSprites[3]);
-        window.draw(bbox);
-        window.draw(bbox1);
-        window.draw(bbox2);
-        window.draw(bbox3);
-        window.draw(red);
-        window.draw(blue);
-        window.draw(green); 
-        window.draw(yellow);
-        window.draw(white);
-        window.draw(red_bal);
-        window.draw(blue_bal);
-        window.draw(green_bal);
-        window.draw(yellow_bal);
-        window.draw(button);
-        window.draw(playerRects[playerIndx]);
-        window.draw(buttonText);
-        window.display();
     }
+    int total6 = 0;
+    for (Asset* tile : currentPlayer->Owned()) {
+        total6 += tile->get_price();
+    }
+    total6 += currentPlayer->getBalance();
+    cout << "jeet gaya " << currentPlayer->get_name() << " bkc yayayayayayay " << "with the assets of : " << total6;
 }
 
 int main()
@@ -1068,5 +1090,3 @@ int main()
     GameController::showBoard();
     return 0;
 }
-
-

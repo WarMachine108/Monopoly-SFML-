@@ -1,14 +1,14 @@
-#include<iostream>
+#include <iostream>
 #include<string.h>
 #include<vector>
 #include<cstdlib>
 #include<ctime>
-#include<map>
 #include<conio.h>
+#include<chrono>
+#include <thread>   
+#include <windows.h>
 #include<SFML/Graphics.hpp>
 #include<SFML/Window.hpp>
-#include <chrono>
-#include <thread>
 
 using namespace sf;
 using namespace std;
@@ -20,17 +20,18 @@ class Asset;
 class Rule;
 class GameController {
 public:
-    static Tile* currentTile;
+    static vector<Rule*> currentRules;
+    static int playerIndx;
     static Player* currentPlayer;
     static vector <Rule*> rules;
     static vector<Player*> players;
     static vector <Tile*> board;
     static vector<string> get_rule_txt();
-    static void show_diceroll(int roll1, int roll2, int index);
-    static void next_turn(int playerIdx, int r1, int r2);
-    static void apply_rule(string player, vector<Rule*>Rules);
+    static int show_diceroll(int r1, int r2);
+    static void next_turn(int xroll1, int xroll2);
+    static void Apply_rule(int ruleIndex);
     static void show_rules(vector<string> ruleTxts);
-    static void end_game();
+    static bool end_game();
     static int showBoard();
     ~GameController() {}
 };
@@ -154,14 +155,22 @@ class Player {
 private:
     string name;
     int balance;
-    vector<Tile*>owned;
+    vector<Asset*>owned;
     int index;
+    int in_jail_chances = 0;
+
 public:
     Player(string name) {
         this->name = name;
         balance = 1500;
         index = 0;
     }
+    vector<Asset*> Owned();
+    int getBalance();
+    void pushProperty(Asset* owns);
+    bool checkbankcorrupcy();
+    void jail_update();
+    bool jail_status();
     void change_balance(int sum);
     void edit_index(int i);
     int change_index(int i);
@@ -181,10 +190,9 @@ public:
     virtual int get_rent() = 0;
     ~Asset() {}
 };
-
-class Eve : public Tile {
+class eve : public Tile {
 };
-class CommunityChest :public Eve {
+class CommunityChest :public eve {
 private:
     string name;
     int price;
@@ -196,7 +204,7 @@ public:
     ~CommunityChest() {}
 };
 
-class Chance :public Eve {
+class Chance :public eve {
 private:
     string name;
     int price;
@@ -208,7 +216,7 @@ public:
     ~Chance() {}
 };
 
-class JailEvent : public Eve {
+class JailEvent : public eve {
 private:
     string name;
 public:
@@ -219,7 +227,7 @@ public:
     ~JailEvent() {}
 };
 
-class TaxEvent : public Eve {
+class TaxEvent : public eve {
 private:
     string name;
     int tax;
@@ -240,7 +248,7 @@ private:
     string name;
     bool owned;
     Buy buy;
-    Player* owner = NULL;
+    Player* owner = GameController::players[4];
 public:
     Property(string name, int price, int rent) {
         this->price = price;
@@ -259,8 +267,8 @@ class Commodity : public Asset {
 private:
     int price;
     string name;
-    bool owned;
-    Player* owner = NULL;
+    bool owned = false;
+    Player* owner = GameController::players[4];
     int rent;
 public:
     Commodity(string name, int price) {
@@ -280,7 +288,8 @@ string Skip::getTitle() {
 
 void Buy::apply_rule() {
     Player* player = GameController::currentPlayer;
-    Asset* currentAsset = (Asset*)GameController::currentTile;
+    Asset* currentAsset = dynamic_cast<Asset*>(GameController::board[GameController::currentPlayer->get_index()]);
+    player->pushProperty(currentAsset);
     int price = currentAsset->get_price();
     player->change_balance(-price);
 }
@@ -290,9 +299,12 @@ string Buy::getTitle() {
 
 void Rent::apply_rule() {
     Player* player = GameController::currentPlayer;
-    Asset* currentAsset = (Asset*)GameController::currentTile;
-    int rent = currentAsset->get_rent();
-    player->change_balance(rent);
+    Tile* tile = GameController::board[player->get_index()];
+    if (Asset* currentAsset = dynamic_cast<Asset*>(tile)) {
+        int rent = currentAsset->get_rent();
+        player->change_balance(-rent); // Deduct rent
+        // Pay rent to owner if applicable
+    }
 }
 string Rent::getTitle() {
     return "";
@@ -300,39 +312,49 @@ string Rent::getTitle() {
 
 void GeneralRule::apply_rule() {
     Player* player = GameController::currentPlayer;
-    TaxEvent* currentAsset = (TaxEvent*)GameController::currentTile;
+    Tile* tile = GameController::board[player->get_index()];
+    TaxEvent* currentAsset = dynamic_cast<TaxEvent*>(tile);
     int tax = currentAsset->get_tax();
     player->change_balance(tax);
 }
+
 string GeneralRule::getTitle() {
     return "";
 }
+
 void community1::apply_rule() {
     Player* player = GameController::currentPlayer;
     player->edit_index(0);
     player->change_balance(200);
 }
+
 string community1::getTitle() {
     return " Advance to Go. (Collect $200) ";
 }
+
 void community2::apply_rule() {
     Player* player = GameController::currentPlayer;
     player->change_balance(200);
 }
+
 string community2::getTitle() {
     return " Bank error in your favor. (Collect $200) ";
 }
+
 void community3::apply_rule() {
     Player* player = GameController::currentPlayer;
     player->change_balance(-50);
 }
+
 string community3::getTitle() {
     return " Doctor's fees. {fee} Pay $50 ";
 }
+
 void community4::apply_rule() {
     Player* player = GameController::currentPlayer;
     player->change_balance(50);
 }
+
 string community4::getTitle() {
     return " From sale of stock you get $50. ";
 }
@@ -341,94 +363,156 @@ void community5::apply_rule() {
     Player* player = GameController::currentPlayer;
     player->change_balance(100);
 }
+
 string community5::getTitle() {
     return " Life insurance matures , Collect $100  ";
 }
+
 void chance1::apply_rule() {
     Player* player = GameController::currentPlayer;
     player->edit_index(10);
     player->change_balance(0);
 }
+
 string chance1::getTitle() {
     return" Go to Jail. Go directly to Jail. Do not pass GO, do not collect $200. ";
 }
+
 void chance2::apply_rule() {
     Player* player = GameController::currentPlayer;
     player->change_balance(-15);
 }
+
 string chance2::getTitle() {
     return " Pay Poor Tax of $15 ";
 }
+
 void chance3::apply_rule() {
     Player* player = GameController::currentPlayer;
     player->change_balance(-20);
 }
+
 string chance3::getTitle() {
-    return "  Drunk in charge  fine $20 ";
+    return " “Drunk in charge” fine $20 ";
 }
+
 void chance4::apply_rule() {
     Player* player = GameController::currentPlayer;
     player->change_balance(-150);
 }
+
 string chance4::getTitle() {
     return " Pay school tax of $150 ";
 }
+
 void chance5::apply_rule() {
     Player* player = GameController::currentPlayer;
     player->change_balance(100);
 }
+
 string chance5::getTitle() {
     return " our Xmas fund matures. Collect $100 ";
 }
+
 void JailRule::apply_rule() {
 }
+
 string JailRule::getTitle() {
-    return "";
+    return "YOU HAVE BEEN ARRESTED!!!(you can't move for next 2 turns TTwTT)";
 }
+
 bool JailRule::check_jail() {
+    GameController::currentPlayer->jail_update();
+    if (GameController::currentPlayer->jail_status() == 0) {
+        return false;
+    }
     return true;
 }
+
 int JailRule::turns = 0;
-void Player::change_balance(int sum) {
-    balance += sum;
+int Player::getBalance() {
+    return balance;
 }
+
+vector<Asset*> Player::Owned() {
+    return owned;
+}
+
+void Player::pushProperty(Asset* owns) {
+    owned.push_back(owns);
+}
+
+bool Player::checkbankcorrupcy() {
+    if (balance <= 0) {
+        return true;
+    }
+    return false;
+}
+
+void Player::jail_update() {
+    in_jail_chances += 1;
+    if (in_jail_chances == 3) {
+        in_jail_chances = 0;
+    }
+}
+
+bool Player::jail_status() {
+    if (in_jail_chances > 0) {
+        jail_update();
+        return true;
+    }
+    return false;
+}
+
+void Player::change_balance(int sum) {
+    balance += (sum / 2);
+}
+
 void Player::edit_index(int i) {
     index = i;
 }
+
 int Player::change_index(int i) {
     index += i;
     return index;
 }
+
 string Player::get_name() {
     return name;
 }
+
 int Player::get_index() {
     return index;
 }
+
 vector<Rule*> CommunityChest::get_rules() {
-    srand(time(0));
+
     int random = 3 + rand() % 5;
     vector<Rule*> rules = { GameController::rules[random] };
     return rules;
 }
 
 vector<Rule*> Chance::get_rules() {
-    srand(time(0));
+
     int random = 8 + rand() % 5;
     vector<Rule*> rules = { GameController::rules[random] };
     return rules;
 }
+
 vector<Rule*>JailEvent::get_rules() {
     vector<Rule*> rules = { GameController::rules[13] };
     return rules;
 }
+
 int TaxEvent::get_tax() {
     return tax;
 }
+
 vector<Rule*>  TaxEvent::get_rules() {
-    vector<Rule*> rules = { GameController::rules[13] };
+    vector<Rule*> rules = { GameController::rules[14] };
     return rules;
 }
+
 vector<Rule*> Property::get_rules() {
     Player* player = GameController::currentPlayer;
     if (owned) {
@@ -438,6 +522,11 @@ vector<Rule*> Property::get_rules() {
         }
         else {
             player->change_balance(rent);
+            for (Player* plyr : GameController::players) {
+                if (plyr->get_name() == owner->get_name()) {
+                    plyr->change_balance(rent);
+                }
+            }
             vector<Rule*> rules = { GameController::rules[2] };
             return rules;
         }
@@ -447,16 +536,20 @@ vector<Rule*> Property::get_rules() {
         return Rules;
     }
 }
+
 int Property::get_rent() {
     return rent;
 }
+
 void Property::assignOwner(Player* player) {
     owner = player;
     owned = true;
 }
+
 int Property::get_price() {
     return price;
 }
+
 vector<Rule*> Commodity::get_rules() {
     Player* player = GameController::currentPlayer;
     if (owned) {
@@ -465,11 +558,15 @@ vector<Rule*> Commodity::get_rules() {
             return Rules;
         }
         else {
-            srand(time(0));
             int roll1 = 1 + rand() % 6;
             int roll2 = 1 + rand() % 6;
             rent = roll1 + roll2;
-            player->change_balance(roll1 + roll2);
+            player->change_balance(-rent);
+            for (Player* plyr : GameController::players) {
+                if (plyr->get_name() == owner->get_name()) {
+                    plyr->change_balance(rent);
+                }
+            }
             vector<Rule*>rules = { GameController::rules[2] };
             return rules;
         }
@@ -481,20 +578,23 @@ vector<Rule*> Commodity::get_rules() {
         return rules;
     }
 }
+
 int Commodity::get_price() {
     return price;
 }
+
 void Commodity::assignOwner(Player* player) {
     owner = player;
     owned = true;
 }
+
 int Commodity::get_rent() {
     return rent;
 }
 
-Player* GameController::currentPlayer = new Player("green");
-Tile* GameController::currentTile = new TaxEvent("GO", 0);
-
+int GameController::playerIndx = 0;
+Player* GameController::currentPlayer = new Player("Blue");
+vector<Rule*> GameController::currentRules = {};
 vector<Rule*> GameController::rules = {
     new Skip,
     new Buy,
@@ -512,11 +612,13 @@ vector<Rule*> GameController::rules = {
     new JailRule,
     new GeneralRule
 };
+
 vector<Player*> GameController::players = {
-    new Player("cyan"),
-    new Player("green"),
-    new Player("yellow"),
-    new Player("red")
+    new Player("Blue"),
+    new Player("Green"),
+    new Player("Yellow"),
+    new Player("Red"),
+    new Player("grey")
 };
 
 vector <Tile*> GameController::board = {
@@ -524,7 +626,7 @@ vector <Tile*> GameController::board = {
     new Property("Mediterranean Avenue", 60, -2),
     new CommunityChest("Community Chest"),
     new Property("Baltic Avenue", 60, -4),
-    new TaxEvent("Income Tax", -200),
+    new TaxEvent("Income Tax", -100),
     new Commodity("Reading Railroad", 200),
     new Property("Oriental Avenue", 100, -6),
     new Chance("Chance"),
@@ -564,45 +666,58 @@ vector <Tile*> GameController::board = {
 
 vector<string> GameController::get_rule_txt() {
     vector<string> ruleTxts;
-    vector<Rule*>rules = currentTile->get_rules();
+    Tile* tile = GameController::board[GameController::currentPlayer->get_index()];
+    vector<Rule*>rules = tile->get_rules();
+    currentRules = rules;
     for (Rule* rule : rules) {
         ruleTxts.push_back(rule->getTitle());
     }
     return ruleTxts;
 }
 
-void GameController::show_diceroll(int roll1, int roll2, int index) {
-    cout << "roll 1 : " << roll1 << endl;
-    cout << "roll 2 : " << roll2 << endl;
-    cout << "current player index : " << index << endl;
+int GameController::show_diceroll(int r1, int r2) {
+    //now we'll wait till the button is clicked, when dice roll is clicked we'll execute this->
+    cout << r1 + r2 << "\n";
+    return r1 + r2;
 }
 
-void GameController::next_turn(int playerIdx, int r1, int r2) {
-    srand(time(0));
-    currentPlayer = players.at(playerIdx);
-    show_diceroll(r1, r2, currentPlayer->change_index(r1 + r2));
-    currentTile = board[currentPlayer->get_index()];
+void GameController::next_turn(int xroll1, int xroll2) {
+    currentPlayer = players.at(playerIndx);
+
+    while (currentPlayer->checkbankcorrupcy() || currentPlayer->jail_status()) {
+        playerIndx += 1;
+        currentPlayer = players.at(playerIndx);
+    }
+
+    int playerBoardIdx = show_diceroll(xroll1, xroll2);
+    int newIndex = (currentPlayer->get_index() + playerBoardIdx) % GameController::board.size();
+    currentPlayer->edit_index(newIndex);
     vector<string> strArr = get_rule_txt();
     show_rules(strArr);
 }
 
-void GameController::apply_rule(string player, vector<Rule*>Rules) {
-
+void GameController::Apply_rule(int ruleIndex) {
+    currentRules[ruleIndex]->apply_rule();
 }
 
 void GameController::show_rules(vector<string> ruleTxts) {
-    cout << "rule : " << ruleTxts[0] << "\n";
+    for (string rule : ruleTxts) {
+        cout << "rule : " << rule << endl;
+    }
+    Apply_rule(0);
 }
 
-void GameController::end_game() {
-
+bool GameController::end_game() {
+    if ((players[0]->checkbankcorrupcy() && players[1]->checkbankcorrupcy() && players[2]->checkbankcorrupcy()) || (players[0]->checkbankcorrupcy() && players[1]->checkbankcorrupcy() && players[3]->checkbankcorrupcy()) || (players[0]->checkbankcorrupcy() && players[2]->checkbankcorrupcy() && players[3]->checkbankcorrupcy()) || (players[1]->checkbankcorrupcy() && players[2]->checkbankcorrupcy() && players[3]->checkbankcorrupcy())) {
+        return true;
+    }
+    return false;
 }
-
 RectangleShape createTileBox(float x, float y, float w, float h, Color color = Color::Transparent) {
     RectangleShape box({ w, h });
     box.setPosition({ x, y });
     box.setFillColor(color);
-    box.setOutlineColor(Color::Transparent);
+    box.setOutlineColor(Color::Red);
     box.setOutlineThickness(2.f);
     return box;
 }
@@ -612,52 +727,82 @@ int GameController::showBoard() {
 
     // Initialize game state variables
     bool isRolling = false;
-    int finalRoll1 = 1, finalRoll2 = 1;
+    int roll1 = 1, roll2 = 1;
+    int total = 0;
     Clock diceAnimationClock;
     const Time frameDuration = milliseconds(100);
-    bool isOver = false;
-    bool isPressedInside = false;
-    bool isMousePressed = false;
 
-    RenderWindow window(VideoMode({ 2560, 1600 }), "Game of Monopoly");
+    RenderWindow window(VideoMode({ 2560, 1600 }), "Monopoly");
     window.setFramerateLimit(60);
     ContextSettings settings;
     settings.antiAliasingLevel = 8;
 
     // Load textures
-    Texture boardTexture, diceTextures[6], playerTextures[4], playerUiTex[4], uirect;
+    Texture boardTexture, diceTextures[6], playerTextures[4], playerUiTex[4], uirect, playerRect[4];
+
     if (!uirect.loadFromFile("Assets/uirect.png")) {
-        cerr << "Failed to load board texture!" << endl;
+        cout << "Failed to load board texture!" << endl;
         return -1;
     }
 
     if (!boardTexture.loadFromFile("Assets/Board.jpg")) {
-        cerr << "Failed to load board texture!" << endl;
+        cout << "Failed to load board texture!" << endl;
         return -1;
     }
 
     for (int i = 0; i < 6; i++) {
         if (!diceTextures[i].loadFromFile("Assets/dice_" + to_string(i + 1) + ".png")) {
-            cerr << "Failed to load dice texture " << i + 1 << endl;
+            cout << "Failed to load dice texture " << i + 1 << endl;
             return -1;
         }
         diceTextures[i].setSmooth(true);
     }
+
     for (int i = 0; i < 4; i++) {
         if (!playerTextures[i].loadFromFile("Assets/p" + to_string(i + 1) + ".png")) {
-            cerr << "Failed to load player texture " << i + 1 << endl;
+            cout << "Failed to load player texture " << i + 1 << endl;
             return -1;
         }
         playerTextures[i].setSmooth(true);
     }
+
     for (int i = 0; i < 4; i++) {
         if (!playerUiTex[i].loadFromFile("Assets/pfp_" + to_string(i + 1) + ".jpg")) {
-            cerr << "Failed to load player texture " << i + 1 << endl;
+            cout << "Failed to load player texture " << i + 1 << endl;
             return -1;
         }
         playerUiTex[i].setSmooth(true);
     }
+
+    for (int i = 0; i < 4; i++) {
+        if (!playerRect[i].loadFromFile("Assets/rect_" + to_string(i + 1) + ".jpg")) {
+            cout << "Failed to load player texture " << i + 1 << endl;
+            return -1;
+        }
+        playerRect[i].setSmooth(true);
+    }
+
     vector<RectangleShape> boxes;
+    boxes.push_back(createTileBox(1390, 1395, 208, 208));
+    boxes.push_back(createTileBox(1260, 1395, 127, 208));
+    boxes.push_back(createTileBox(1130, 1395, 127, 208));
+    boxes.push_back(createTileBox(995, 1395, 127, 208));
+    boxes.push_back(createTileBox(865, 1395, 127, 208));
+    boxes.push_back(createTileBox(735, 1395, 127, 208));
+    boxes.push_back(createTileBox(605, 1395, 127, 208));
+    boxes.push_back(createTileBox(475, 1395, 127, 208));
+    boxes.push_back(createTileBox(345, 1395, 127, 208));
+    boxes.push_back(createTileBox(215, 1395, 127, 208));
+    boxes.push_back(createTileBox(0, 1395, 208, 208));
+    boxes.push_back(createTileBox(0, 1264, 208, 127));
+    boxes.push_back(createTileBox(0, 1134, 208, 127));
+    boxes.push_back(createTileBox(0, 1004, 208, 127));
+    boxes.push_back(createTileBox(0, 872, 208, 127));
+    boxes.push_back(createTileBox(0, 740, 208, 127));
+    boxes.push_back(createTileBox(0, 608, 208, 127));
+    boxes.push_back(createTileBox(0, 476, 208, 127));
+    boxes.push_back(createTileBox(0, 345, 208, 127));
+    boxes.push_back(createTileBox(0, 213, 208, 127));
     boxes.push_back(createTileBox(0, 0, 208, 208));
     boxes.push_back(createTileBox(215, 0, 127, 208));
     boxes.push_back(createTileBox(345, 0, 127, 208));
@@ -669,7 +814,6 @@ int GameController::showBoard() {
     boxes.push_back(createTileBox(1130, 0, 127, 208));
     boxes.push_back(createTileBox(1260, 0, 127, 208));
     boxes.push_back(createTileBox(1390, 0, 208, 208));
-
     boxes.push_back(createTileBox(1390, 213, 208, 127));
     boxes.push_back(createTileBox(1390, 345, 208, 127));
     boxes.push_back(createTileBox(1390, 476, 208, 127));
@@ -679,30 +823,10 @@ int GameController::showBoard() {
     boxes.push_back(createTileBox(1390, 1004, 208, 127));
     boxes.push_back(createTileBox(1390, 1134, 208, 127));
     boxes.push_back(createTileBox(1390, 1264, 208, 127));
-    boxes.push_back(createTileBox(1390, 1395, 208, 208));
 
-    boxes.push_back(createTileBox(0, 1395, 208, 208));
-    boxes.push_back(createTileBox(215, 1395, 127, 208));
-    boxes.push_back(createTileBox(345, 1395, 127, 208));
-    boxes.push_back(createTileBox(475, 1395, 127, 208));
-    boxes.push_back(createTileBox(605, 1395, 127, 208));
-    boxes.push_back(createTileBox(735, 1395, 127, 208));
-    boxes.push_back(createTileBox(865, 1395, 127, 208));
-    boxes.push_back(createTileBox(995, 1395, 127, 208));
-    boxes.push_back(createTileBox(1130, 1395, 127, 208));
-    boxes.push_back(createTileBox(1260, 1395, 127, 208));
-    boxes.push_back(createTileBox(1390, 1395, 208, 208));
-
-    boxes.push_back(createTileBox(0, 213, 208, 127));
-    boxes.push_back(createTileBox(0, 345, 208, 127));
-    boxes.push_back(createTileBox(0, 476, 208, 127));
-    boxes.push_back(createTileBox(0, 608, 208, 127));
-    boxes.push_back(createTileBox(0, 740, 208, 127));
-    boxes.push_back(createTileBox(0, 872, 208, 127));
-    boxes.push_back(createTileBox(0, 1004, 208, 127));
-    boxes.push_back(createTileBox(0, 1134, 208, 127));
-    boxes.push_back(createTileBox(0, 1264, 208, 127));
-    boxes.push_back(createTileBox(0, 1395, 208, 208));
+    sf::RectangleShape button(sf::Vector2f(150, 50));
+    button.setPosition({ 2150, 750 });
+    button.setFillColor(sf::Color::Blue);
 
     Font uiFont;
     if (!uiFont.openFromFile("Assets/agencyfb.ttf")) {
@@ -710,11 +834,16 @@ int GameController::showBoard() {
         return -1;
     }
 
+    Text buttonText(uiFont);
     Text red(uiFont);
     Text blue(uiFont);
     Text green(uiFont);
     Text yellow(uiFont);
     Text white(uiFont);
+    Text red_bal(uiFont);
+    Text blue_bal(uiFont);
+    Text green_bal(uiFont);
+    Text yellow_bal(uiFont);
 
     red.setString("PLAYER RED");
     blue.setString("PLAYER BLUE");
@@ -727,25 +856,41 @@ int GameController::showBoard() {
     green.setCharacterSize(30);
     yellow.setCharacterSize(30);
     white.setCharacterSize(40);
+    red_bal.setCharacterSize(30);
+    blue_bal.setCharacterSize(30);
+    green_bal.setCharacterSize(30);
+    yellow_bal.setCharacterSize(30);
 
     red.setFillColor(Color::Color(255, 150, 155, 255));
     blue.setFillColor(Color::Color(170, 211, 210, 255));
     green.setFillColor(Color::Color(186, 222, 160, 255));
     yellow.setFillColor(Color::Color(249, 205, 136, 255));
     white.setFillColor(Color::White);
+    red_bal.setFillColor(Color::White);
+    blue_bal.setFillColor(Color::White);
+    green_bal.setFillColor(Color::White);
+    yellow_bal.setFillColor(Color::White);
 
     red.setStyle(Text::Bold);
     blue.setStyle(Text::Bold);
     green.setStyle(Text::Bold);
     yellow.setStyle(Text::Bold);
     white.setStyle(Text::Bold);
+    red_bal.setStyle(Text::Bold);
+    blue_bal.setStyle(Text::Bold);
+    green_bal.setStyle(Text::Bold);
+    yellow_bal.setStyle(Text::Bold);
 
     blue.setPosition({ 1740, 370 });
     green.setPosition({ 1740, 470 });
     yellow.setPosition({ 1740, 570 });
     red.setPosition({ 1740, 670 });
     white.setPosition({ 2150,150 });
-
+    blue_bal.setPosition({ 2420, 370 });
+    green_bal.setPosition({ 2420, 470 });
+    yellow_bal.setPosition({ 2420, 570 });
+    red_bal.setPosition({ 2420, 670 });
+    buttonText.setPosition({ 2050, 700 });
 
     // Initialize sprites
     Sprite boardSprite(boardTexture);
@@ -753,10 +898,8 @@ int GameController::showBoard() {
     Sprite playerSprites[4] = { Sprite(playerTextures[0]), Sprite(playerTextures[1]) , Sprite(playerTextures[2]) , Sprite(playerTextures[3]) };
     Sprite pfpSprites[4] = { Sprite(playerUiTex[0]), Sprite(playerUiTex[1]) , Sprite(playerUiTex[2]) , Sprite(playerUiTex[3]) };
     Sprite uibox(uirect);
+    Sprite playerRects[4] = { Sprite(playerRect[0]), Sprite(playerRect[1]) , Sprite(playerRect[2]) , Sprite(playerRect[3]) };
 
-
-    diceSprites[0].setTexture(diceTextures[0]);
-    diceSprites[1].setTexture(diceTextures[0]);
     diceSprites[0].setPosition({ 1620, 50 });
     diceSprites[1].setPosition({ 1850, 50 });
     diceSprites[0].scale({ 0.5f, 0.5f });
@@ -764,6 +907,18 @@ int GameController::showBoard() {
 
     uibox.setPosition({ 1625, 325 });
     uibox.scale({ 1.14f, 0.95f });
+
+    playerRects[0].setPosition({ 1630, 350 });
+    playerRects[0].scale({ 0.2f, 0.2f });
+
+    playerRects[1].setPosition({ 1630, 450 });
+    playerRects[1].scale({ 0.2f, 0.2f });
+
+    playerRects[2].setPosition({ 1630, 550 });
+    playerRects[2].scale({ 0.2f, 0.2f });
+
+    playerRects[3].setPosition({ 1630, 650 });
+    playerRects[3].scale({ 0.2f, 0.2f });
 
     playerSprites[0].scale({ 0.18f, 0.18f });
     playerSprites[0].setPosition({ 1475,1550 });
@@ -790,7 +945,7 @@ int GameController::showBoard() {
     pfpSprites[3].setPosition({ 1650, 650 });
 
     // Game initialization
-    FloatRect bounds = playerSprites[0].getGlobalBounds();
+    FloatRect bo[4] = { playerSprites[0].getGlobalBounds(), playerSprites[1].getGlobalBounds() , playerSprites[2].getGlobalBounds() , playerSprites[3].getGlobalBounds() };
     RectangleShape bbox;
     bbox.setPosition({ 1550,1550 });
     bbox.setSize({ 30,45 });
@@ -798,7 +953,6 @@ int GameController::showBoard() {
     bbox.setOutlineColor(sf::Color::Red);      // Red outline
     bbox.setOutlineThickness(2.f);
 
-    FloatRect bounds1 = playerSprites[0].getGlobalBounds();
     RectangleShape bbox1;
     bbox1.setPosition({ 1550,1480 });
     bbox1.setSize({ 30,45 });
@@ -806,7 +960,6 @@ int GameController::showBoard() {
     bbox1.setOutlineColor(sf::Color::Red);      // Red outline
     bbox1.setOutlineThickness(2.f);
 
-    FloatRect bounds2 = playerSprites[0].getGlobalBounds();
     RectangleShape bbox2;
     bbox2.setPosition({ 1470,1480 });
     bbox2.setSize({ 30,45 });
@@ -814,7 +967,6 @@ int GameController::showBoard() {
     bbox2.setOutlineColor(sf::Color::Red);      // Red outline
     bbox2.setOutlineThickness(2.f);
 
-    FloatRect bounds3 = playerSprites[0].getGlobalBounds();
     RectangleShape bbox3;
     bbox3.setPosition({ 1480,1550 });
     bbox3.setSize({ 30,45 });
@@ -825,26 +977,35 @@ int GameController::showBoard() {
     // Main game loop
     while (window.isOpen()) {
         while (const optional event = window.pollEvent()) {
-            if (event->is<Event::Closed>()) {
+            if (event->is<sf::Event::Closed>()) {
                 window.close();
             }
             if (sf::Keyboard::isKeyPressed(Keyboard::Scan::Space))
             {
                 isRolling = true;
                 diceAnimationClock.restart();
-                finalRoll1 = rand() % 6 + 1;
-                finalRoll2 = rand() % 6 + 1;
+                roll1 = rand() % 6 + 1;
+                roll2 = rand() % 6 + 1;
             }
         }
+        for (int i = 0; i < 40; i++) {
 
+        }
         // Update game state
         if (isRolling) {
             Time elapsed = diceAnimationClock.getElapsedTime();
             if (elapsed >= seconds(1.5f)) {
                 isRolling = false;
-                GameController::next_turn(0, finalRoll1, finalRoll2);
+                GameController::next_turn(roll1, roll2);
+                playerSprites[playerIndx].setPosition(boxes[currentPlayer->get_index()].getPosition());
+
+                GameController::playerIndx = (GameController::playerIndx + 1) % ((GameController::players.size() - 1));
             }
-            //update the bal
+            //BGYR
+            red_bal.setString("$" + to_string(players[3]->getBalance()));
+            blue_bal.setString("$" + to_string(players[0]->getBalance()));
+            green_bal.setString("$" + to_string(players[1]->getBalance()));
+            yellow_bal.setString("$" + to_string(players[2]->getBalance()));
         }
 
         // Animation update
@@ -853,13 +1014,20 @@ int GameController::showBoard() {
             diceSprites[0].setTexture(diceTextures[frame]);
             diceSprites[1].setTexture(diceTextures[(frame + 3) % 6]);
         }
+
         else {
-            diceSprites[0].setTexture(diceTextures[finalRoll1 - 1]);
-            diceSprites[1].setTexture(diceTextures[finalRoll2 - 1]);
+            diceSprites[0].setTexture(diceTextures[roll1 - 1]);
+            diceSprites[1].setTexture(diceTextures[roll2 - 1]);
+        }
+
+        if (sf::Mouse::isButtonPressed(Mouse::Button::Left)) {
+            sf::Vector2i mousePos = sf::Mouse::getPosition(window);
+            if (button.getGlobalBounds().contains(static_cast<sf::Vector2f>(mousePos))) {
+                std::cout << "Button clicked!" << std::endl;
+            }
         }
 
         window.clear(Color::Color(23, 14, 28, 255));
-
         window.draw(boardSprite);
         for (const auto& box : boxes)
             window.draw(box);
@@ -885,12 +1053,23 @@ int GameController::showBoard() {
         window.draw(green);
         window.draw(yellow);
         window.draw(white);
+        window.draw(red_bal);
+        window.draw(blue_bal);
+        window.draw(green_bal);
+        window.draw(yellow_bal);
+        //window.draw(button);
+        //window.draw(buttonText);
+        window.draw(playerRects[playerIndx]);
+        window.draw(buttonText);
         window.display();
     }
 }
 
 int main()
 {
+    srand(time(0));
     GameController::showBoard();
-    return 0;
+    return 0;
 }
+
+
